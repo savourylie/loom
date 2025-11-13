@@ -39,3 +39,15 @@ export {
 
 // Error exports
 export { ErrorCode, ErrorSeverity, LexerError } from './errors/index.js';
+
+// Parser exports
+export { Parser, parseDocument } from './parser/index.js';
+export type { ParseOptions, ParseResult, ParseMetrics, Diagnostic } from './parser/index.js';
+export { ParserError, DiagnosticCollector } from './parser/index.js';
+export {
+  validateNode,
+  validateNodeProperties,
+  validatePlacement,
+  validatePlacementContext,
+  validatePropertyValues,
+} from './parser/index.js';

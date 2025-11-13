@@ -40,7 +40,7 @@ Authors need lightweight responsiveness without leaving the DSL; this engine all
 - Log breakpoint evaluations (active rule + width) in dev console to debug template behavior; expose counter for fallback path usage.
 
 ### Dependencies / Related Tickets
-- Depends on **T-003**, **T-004**, **T-011**.
+- Depends on **T-003** (✅ Complete 2025-11-13), **T-004**, **T-011**.
 
 ### Risks & Mitigations
 - **Risk**: Frequent re-renders on resize degrade perf. **Mitigation**: debounce width changes and reuse cached AST per breakpoint.

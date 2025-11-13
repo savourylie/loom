@@ -42,7 +42,19 @@ Real-time authoring with actionable errors is core to Loom's value; the editor m
 - Track editor parse duration, keystrokes per minute, and diagnostic counts via dev console metrics for perf tuning.
 
 ### Dependencies / Related Tickets
-- Depends on **T-003** and **T-009**.
+- Depends on **T-003** for structured diagnostics and editor integration.
+  - ✅ **T-003 Complete (2025-11-13)**: Diagnostics ready for gutter annotations
+  - **Available Diagnostic API**:
+    - `Diagnostic` interface with code, severity, message, line, column, hint
+    - Error codes: E011-E020 (syntax), E101-E199 (properties), E201-E299 (semantic), E301-E399 (layout), W501-W599 (performance)
+    - Severity levels: error, warning, info (for color coding)
+    - Position tracking: line/column for gutter placement
+  - **Usage**:
+    - `const result = parseDocument(dsl);`
+    - `result.diagnostics` - Array of structured diagnostics
+    - Each diagnostic includes hint for quick fixes
+  - **See**: [T-003 Completion Notes](./T-003-parser-with-diagnostics.md#-completion-notes-2025-11-13)
+- Depends on **T-009**.
 - Connected to **T-012**, **T-011**.
 
 ### Risks & Mitigations

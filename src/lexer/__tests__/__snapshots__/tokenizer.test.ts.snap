@@ -36,6 +36,10 @@ exports[`Tokenizer > Snapshot tests > matches snapshot for dashboard layout 1`] 
 ",
   },
   {
+    "type": "INDENT",
+    "value": "",
+  },
+  {
     "type": "CARD",
     "value": "card",
   },
@@ -138,6 +142,10 @@ exports[`Tokenizer > Snapshot tests > matches snapshot for dashboard layout 1`] 
     "value": 2,
   },
   {
+    "type": "DEDENT",
+    "value": "",
+  },
+  {
     "type": "EOF",
     "value": "",
   },
@@ -204,6 +212,11 @@ exports[`Tokenizer > Snapshot tests > matches snapshot for login form example 1`
 ",
   },
   {
+    "raw": "",
+    "type": "INDENT",
+    "value": "",
+  },
+  {
     "raw": "card",
     "type": "CARD",
     "value": "card",
@@ -244,6 +257,11 @@ exports[`Tokenizer > Snapshot tests > matches snapshot for login form example 1`
     "type": "NEWLINE",
     "value": "
 ",
+  },
+  {
+    "raw": "",
+    "type": "INDENT",
+    "value": "",
   },
   {
     "raw": "input",
@@ -327,6 +345,16 @@ exports[`Tokenizer > Snapshot tests > matches snapshot for login form example 1`
 ",
   },
   {
+    "raw": "",
+    "type": "DEDENT",
+    "value": "",
+  },
+  {
+    "raw": "",
+    "type": "DEDENT",
+    "value": "",
+  },
+  {
     "raw": "style",
     "type": "STYLE",
     "value": "style",
@@ -347,6 +375,11 @@ exports[`Tokenizer > Snapshot tests > matches snapshot for login form example 1`
     "type": "NEWLINE",
     "value": "
 ",
+  },
+  {
+    "raw": "",
+    "type": "INDENT",
+    "value": "",
   },
   {
     "raw": "skin",
@@ -396,6 +429,11 @@ exports[`Tokenizer > Snapshot tests > matches snapshot for login form example 1`
     "type": "NEWLINE",
     "value": "
 ",
+  },
+  {
+    "raw": "",
+    "type": "DEDENT",
+    "value": "",
   },
   {
     "raw": "}",

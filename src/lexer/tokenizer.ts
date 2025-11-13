@@ -24,6 +24,9 @@ export class Tokenizer {
   private column: number = 0;
   private tokenCache: Token[] = [];
   private errors: LexerError[] = [];
+  private indentationStack: number[] = [0]; // Track indentation levels
+  private pendingTokens: Token[] = []; // Queue for INDENT/DEDENT tokens
+  private atLineStart: boolean = true; // Track if we're at the start of a line
 
   constructor(input: string) {
     this.input = input;
@@ -80,10 +83,32 @@ export class Tokenizer {
    * Main tokenization logic - get next token from input
    */
   private nextToken(): Token {
+    // Return pending tokens first (INDENT/DEDENT)
+    if (this.pendingTokens.length > 0) {
+      return this.pendingTokens.shift()!;
+    }
+
+    // Handle indentation at line start
+    if (this.atLineStart) {
+      this.atLineStart = false;
+      const indentToken = this.handleIndentation();
+      if (indentToken) {
+        return indentToken;
+      }
+    }
+
     this.skipWhitespaceExceptNewlines();
 
     // Check for EOF
     if (this.isAtEnd()) {
+      // Emit DEDENTs to unwind indentation stack
+      while (this.indentationStack.length > 1) {
+        this.indentationStack.pop();
+        this.pendingTokens.push(this.createToken(TokenType.DEDENT, '', ''));
+      }
+      if (this.pendingTokens.length > 0) {
+        return this.pendingTokens.shift()!;
+      }
       return this.createToken(TokenType.EOF, '', '');
     }
 
@@ -102,6 +127,7 @@ export class Tokenizer {
       this.advanceChar();
       this.line++;
       this.column = 0;
+      this.atLineStart = true; // Next token will handle indentation
       return this.createToken(TokenType.NEWLINE, '\n', '\n', startLine, startColumn);
     }
 
@@ -503,6 +529,79 @@ export class Tokenizer {
       line: line ?? this.line,
       column: column ?? this.column,
     };
+  }
+
+  /**
+   * Handle indentation at the start of a line
+   * Emits INDENT or DEDENT tokens based on indentation changes
+   */
+  private handleIndentation(): Token | null {
+    const startLine = this.line;
+    const startColumn = this.column;
+
+    // Measure indentation (spaces/tabs at line start)
+    let indentWidth = 0;
+
+    while (!this.isAtEnd() && (this.currentChar() === ' ' || this.currentChar() === '\t')) {
+      if (this.currentChar() === '\t') {
+        indentWidth += 4; // Tab = 4 spaces
+      } else {
+        indentWidth += 1;
+      }
+      this.advanceChar();
+    }
+
+    // Skip blank lines and comments (don't change indentation)
+    if (this.isAtEnd() || this.currentChar() === '\n' ||
+        (this.currentChar() === '/' && this.peekChar() === '/')) {
+      return null;
+    }
+
+    const currentIndent = this.indentationStack[this.indentationStack.length - 1]!;
+
+    // Indentation increased
+    if (indentWidth > currentIndent) {
+      this.indentationStack.push(indentWidth);
+      return this.createToken(TokenType.INDENT, '', '', startLine, startColumn);
+    }
+
+    // Indentation decreased (possibly multiple levels)
+    if (indentWidth < currentIndent) {
+      // Find matching indentation level
+      let dedentCount = 0;
+      while (
+        this.indentationStack.length > 0 &&
+        this.indentationStack[this.indentationStack.length - 1]! > indentWidth
+      ) {
+        this.indentationStack.pop();
+        dedentCount++;
+      }
+
+      // Check if indentation matches a level on the stack
+      if (this.indentationStack[this.indentationStack.length - 1] !== indentWidth) {
+        const error = new LexerError(
+          ErrorCode.INVALID_TOKEN,
+          `Inconsistent indentation (expected ${this.indentationStack[this.indentationStack.length - 1]}, got ${indentWidth})`,
+          startLine,
+          startColumn,
+          undefined,
+          'Indentation must match a previous level',
+        );
+        this.errors.push(error);
+      }
+
+      // Queue DEDENT tokens (emit all but one, return first)
+      for (let i = 1; i < dedentCount; i++) {
+        this.pendingTokens.push(this.createToken(TokenType.DEDENT, '', '', startLine, startColumn));
+      }
+
+      if (dedentCount > 0) {
+        return this.createToken(TokenType.DEDENT, '', '', startLine, startColumn);
+      }
+    }
+
+    // Same indentation - no token needed
+    return null;
   }
 
   // ===== Character helpers =====

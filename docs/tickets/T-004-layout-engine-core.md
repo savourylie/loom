@@ -42,7 +42,19 @@ Accurate layout math is required to render wireframes that match author intent a
 - Emit layout timing metrics (parse-to-layout duration) and log warnings for collisions/out-of-bounds to help catch DSL regressions in playground console.
 
 ### Dependencies / Related Tickets
-- Depends on **T-003**.
+- Depends on **T-003** for parser and diagnostics.
+  - ✅ **T-003 Complete (2025-11-13)**: Parser and diagnostics ready for consumption
+  - **Available Parser API**:
+    - `parseDocument(input, options?)` - Entry point returns ParseResult
+    - Location: [`src/parser/parser.ts`](../../src/parser/parser.ts)
+    - Usage: `const result = parseDocument(dsl); // returns document + diagnostics`
+    - Diagnostics: Structured errors with line/col for layout validation
+    - Performance: ~1ms parse time, tracks node count
+  - **AST Output**:
+    - Document structure with nodes[], styles[], variables{}
+    - Node properties: type, label, id, classes, place, props, children
+    - Grid placement validation ready
+  - **See**: [T-003 Completion Notes](./T-003-parser-with-diagnostics.md#-completion-notes-2025-11-13)
 - Required by **T-005**, **T-011**, **T-018**.
 
 ### Risks & Mitigations

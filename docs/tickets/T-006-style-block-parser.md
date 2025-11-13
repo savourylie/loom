@@ -42,7 +42,19 @@ Separate styling is a Loom differentiator; we need a reliable way to interpret s
 - Count style diagnostic occurrences and log when selectors fail to match any nodes (helps authors debug).
 
 ### Dependencies / Related Tickets
-- Depends on **T-003** (Parser).
+- Depends on **T-003** (Parser) for document structure and incremental parsing API.
+  - ✅ **T-003 Complete (2025-11-13)**: Parser with incremental parsing hooks ready
+  - **Available Parser API**:
+    - `parseDocument(input, options?)` - Supports incrementalRange option (API ready)
+    - Current: Full reparse, API designed for future incremental optimization
+    - Diagnostics: DiagnosticCollector with max 10 diagnostics
+    - Error recovery: Skip to NEWLINE, best-effort AST
+  - **Style Block Stubs**:
+    - `parseStyleBlock()` - Currently stubbed with TODO marker
+    - `parseLetStatement()` - Currently stubbed with TODO marker
+    - `parseWhenBlock()` - Currently stubbed with TODO marker
+    - Ready for full implementation in this ticket
+  - **See**: [T-003 Completion Notes](./T-003-parser-with-diagnostics.md#-completion-notes-2025-11-13)
 - Indirectly depends on **T-002** (Lexer).
   - ✅ **T-002 Complete (2025-11-13)**: Style tokens available for parsing
   - **Relevant Style Tokens**:
