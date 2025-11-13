@@ -1,0 +1,37 @@
+{
+  "name": "loom-dsl",
+  "version": "0.1.0",
+  "description": "Loom DSL - Declarative UI layout language",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:ui": "vitest --ui"
+  },
+  "keywords": [
+    "dsl",
+    "layout",
+    "ui",
+    "lexer",
+    "parser"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.10.6",
+    "@vitest/ui": "^4.0.8",
+    "typescript": "^5.3.3",
+    "vitest": "^4.0.8"
+  }
+}

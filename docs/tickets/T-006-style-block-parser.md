@@ -42,8 +42,22 @@ Separate styling is a Loom differentiator; we need a reliable way to interpret s
 - Count style diagnostic occurrences and log when selectors fail to match any nodes (helps authors debug).
 
 ### Dependencies / Related Tickets
-- Depends on **T-003**.
-- Enables **T-007**, **T-015**.
+- Depends on **T-003** (Parser).
+- Indirectly depends on **T-002** (Lexer).
+  - ✅ **T-002 Complete (2025-11-13)**: Style tokens available for parsing
+  - **Relevant Style Tokens**:
+    - Keywords: `STYLE`, `LET`, `WHEN`
+    - Selectors: `SELECTOR_DEFAULT`, `SELECTOR_TYPE`, `SELECTOR_CLASS`, `SELECTOR_ID`
+    - Punctuation: `LBRACE`, `RBRACE`, `COLON`, `SEMICOLON`
+    - Color tokens: `COLOR_REF` (color.brand, color.text, etc.), `HEX_COLOR` (#6D28D9)
+    - Style properties: `STYLE_SKIN`, `STYLE_FILL`, `STYLE_STROKE`, `STYLE_TEXT`, `STYLE_SHADOW`, `STYLE_U`, `STYLE_FONT`
+    - Variable references: `VARIABLE_REF` ($variableName)
+  - **Style AST Types**:
+    - `StyleRule` with `selector` and `declarations`
+    - `Selector` union type: default | type | class | id
+    - Location: [`src/ast/types.ts`](../../src/ast/types.ts)
+  - **See**: [T-002 Token Types](./T-002-lexer-and-ast.md#2-token-types-implemented) for complete list
+- Enables **T-007** (Skin System), **T-015** (Docs).
 
 ### Risks & Mitigations
 - **Risk**: Selector precedence bugs. **Mitigation**: align algorithm to CSS rules, add unit coverage for ties.

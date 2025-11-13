@@ -1,0 +1,411 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Tokenizer > Snapshot tests > matches snapshot for dashboard layout 1`] = `
+[
+  {
+    "type": "GRID",
+    "value": "grid",
+  },
+  {
+    "type": "PROP_COLS",
+    "value": "cols",
+  },
+  {
+    "type": "COLON",
+    "value": ":",
+  },
+  {
+    "type": "NUMBER",
+    "value": 12,
+  },
+  {
+    "type": "PROP_GAP",
+    "value": "gap",
+  },
+  {
+    "type": "COLON",
+    "value": ":",
+  },
+  {
+    "type": "NUMBER",
+    "value": 2,
+  },
+  {
+    "type": "NEWLINE",
+    "value": "
+",
+  },
+  {
+    "type": "CARD",
+    "value": "card",
+  },
+  {
+    "type": "STRING",
+    "value": "Dashboard",
+  },
+  {
+    "type": "AT_COLUMN",
+    "value": 1,
+  },
+  {
+    "type": "SPAN",
+    "value": 12,
+  },
+  {
+    "type": "PROP_PAD",
+    "value": "pad",
+  },
+  {
+    "type": "COLON",
+    "value": ":",
+  },
+  {
+    "type": "NUMBER",
+    "value": 2,
+  },
+  {
+    "type": "NEWLINE",
+    "value": "
+",
+  },
+  {
+    "type": "CARD",
+    "value": "card",
+  },
+  {
+    "type": "STRING",
+    "value": "Activity",
+  },
+  {
+    "type": "AT_COLUMN",
+    "value": 1,
+  },
+  {
+    "type": "SPAN",
+    "value": 8,
+  },
+  {
+    "type": "ROW",
+    "value": 2,
+  },
+  {
+    "type": "PROP_PAD",
+    "value": "pad",
+  },
+  {
+    "type": "COLON",
+    "value": ":",
+  },
+  {
+    "type": "NUMBER",
+    "value": 3,
+  },
+  {
+    "type": "NEWLINE",
+    "value": "
+",
+  },
+  {
+    "type": "CARD",
+    "value": "card",
+  },
+  {
+    "type": "STRING",
+    "value": "Actions",
+  },
+  {
+    "type": "AT_COLUMN",
+    "value": 9,
+  },
+  {
+    "type": "SPAN",
+    "value": 4,
+  },
+  {
+    "type": "ROW",
+    "value": 2,
+  },
+  {
+    "type": "PROP_PAD",
+    "value": "pad",
+  },
+  {
+    "type": "COLON",
+    "value": ":",
+  },
+  {
+    "type": "NUMBER",
+    "value": 2,
+  },
+  {
+    "type": "EOF",
+    "value": "",
+  },
+]
+`;
+
+exports[`Tokenizer > Snapshot tests > matches snapshot for login form example 1`] = `
+[
+  {
+    "raw": "grid",
+    "type": "GRID",
+    "value": "grid",
+  },
+  {
+    "raw": "cols",
+    "type": "PROP_COLS",
+    "value": "cols",
+  },
+  {
+    "raw": ":",
+    "type": "COLON",
+    "value": ":",
+  },
+  {
+    "raw": "12",
+    "type": "NUMBER",
+    "value": 12,
+  },
+  {
+    "raw": "gap",
+    "type": "PROP_GAP",
+    "value": "gap",
+  },
+  {
+    "raw": ":",
+    "type": "COLON",
+    "value": ":",
+  },
+  {
+    "raw": "2",
+    "type": "NUMBER",
+    "value": 2,
+  },
+  {
+    "raw": "pad",
+    "type": "PROP_PAD",
+    "value": "pad",
+  },
+  {
+    "raw": ":",
+    "type": "COLON",
+    "value": ":",
+  },
+  {
+    "raw": "3",
+    "type": "NUMBER",
+    "value": 3,
+  },
+  {
+    "raw": "
+",
+    "type": "NEWLINE",
+    "value": "
+",
+  },
+  {
+    "raw": "card",
+    "type": "CARD",
+    "value": "card",
+  },
+  {
+    "raw": ""Sign in"",
+    "type": "STRING",
+    "value": "Sign in",
+  },
+  {
+    "raw": "@c5",
+    "type": "AT_COLUMN",
+    "value": 5,
+  },
+  {
+    "raw": "s4",
+    "type": "SPAN",
+    "value": 4,
+  },
+  {
+    "raw": "pad",
+    "type": "PROP_PAD",
+    "value": "pad",
+  },
+  {
+    "raw": ":",
+    "type": "COLON",
+    "value": ":",
+  },
+  {
+    "raw": "3",
+    "type": "NUMBER",
+    "value": 3,
+  },
+  {
+    "raw": "
+",
+    "type": "NEWLINE",
+    "value": "
+",
+  },
+  {
+    "raw": "input",
+    "type": "INPUT",
+    "value": "input",
+  },
+  {
+    "raw": ""Email"",
+    "type": "STRING",
+    "value": "Email",
+  },
+  {
+    "raw": "#",
+    "type": "HASH",
+    "value": "#",
+  },
+  {
+    "raw": "email",
+    "type": "IDENTIFIER",
+    "value": "email",
+  },
+  {
+    "raw": "type",
+    "type": "PROP_TYPE",
+    "value": "type",
+  },
+  {
+    "raw": ":",
+    "type": "COLON",
+    "value": ":",
+  },
+  {
+    "raw": "email",
+    "type": "IDENTIFIER",
+    "value": "email",
+  },
+  {
+    "raw": "
+",
+    "type": "NEWLINE",
+    "value": "
+",
+  },
+  {
+    "raw": "button",
+    "type": "BUTTON",
+    "value": "button",
+  },
+  {
+    "raw": ""Sign in"",
+    "type": "STRING",
+    "value": "Sign in",
+  },
+  {
+    "raw": "tone",
+    "type": "PROP_TONE",
+    "value": "tone",
+  },
+  {
+    "raw": ":",
+    "type": "COLON",
+    "value": ":",
+  },
+  {
+    "raw": "primary",
+    "type": "IDENTIFIER",
+    "value": "primary",
+  },
+  {
+    "raw": "
+",
+    "type": "NEWLINE",
+    "value": "
+",
+  },
+  {
+    "raw": "
+",
+    "type": "NEWLINE",
+    "value": "
+",
+  },
+  {
+    "raw": "style",
+    "type": "STYLE",
+    "value": "style",
+  },
+  {
+    "raw": "default",
+    "type": "SELECTOR_DEFAULT",
+    "value": "default",
+  },
+  {
+    "raw": "{",
+    "type": "LBRACE",
+    "value": "{",
+  },
+  {
+    "raw": "
+",
+    "type": "NEWLINE",
+    "value": "
+",
+  },
+  {
+    "raw": "skin",
+    "type": "STYLE_SKIN",
+    "value": "skin",
+  },
+  {
+    "raw": ":",
+    "type": "COLON",
+    "value": ":",
+  },
+  {
+    "raw": "clean",
+    "type": "IDENTIFIER",
+    "value": "clean",
+  },
+  {
+    "raw": ";",
+    "type": "SEMICOLON",
+    "value": ";",
+  },
+  {
+    "raw": "
+",
+    "type": "NEWLINE",
+    "value": "
+",
+  },
+  {
+    "raw": "color.brand",
+    "type": "COLOR_REF",
+    "value": "color.brand",
+  },
+  {
+    "raw": ":",
+    "type": "COLON",
+    "value": ":",
+  },
+  {
+    "raw": "#6D28D9",
+    "type": "HEX_COLOR",
+    "value": "#6D28D9",
+  },
+  {
+    "raw": "
+",
+    "type": "NEWLINE",
+    "value": "
+",
+  },
+  {
+    "raw": "}",
+    "type": "RBRACE",
+    "value": "}",
+  },
+  {
+    "raw": "",
+    "type": "EOF",
+    "value": "",
+  },
+]
+`;

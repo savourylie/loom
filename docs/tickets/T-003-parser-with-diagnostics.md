@@ -43,7 +43,26 @@ Accurate parsing with actionable errors is foundational for layout, renderer, an
 - Expose parser timing metrics (ms) for performance instrumentation consumed by T-018.
 
 ### Dependencies / Related Tickets
-- Depends on **T-002**.
+- Depends on **T-002** for lexer and AST types.
+  - ✅ **T-002 Complete (2025-11-13)**: Lexer and AST ready for consumption
+  - **Available Lexer API**:
+    - `Tokenizer` class with `peek(offset)` and `advance()` methods for lookahead
+    - Location: [`src/lexer/tokenizer.ts`](../../src/lexer/tokenizer.ts)
+    - Usage: `new Tokenizer(input)`, then call `peek()` for lookahead, `advance()` to consume
+    - Error handling: `getErrors()` returns array of `LexerError` objects with line/column metadata
+    - Token types: 56 types defined in [`src/lexer/tokens.ts`](../../src/lexer/tokens.ts)
+  - **Available AST Types**:
+    - Core types: `Node`, `PlacementTokens`, `StyleRule`, `Selector`, `Document`, `Breakpoint`
+    - Location: [`src/ast/types.ts`](../../src/ast/types.ts)
+    - Helper functions: `createNode()`, `createDocument()`, `createStyleRule()`
+    - Type guards: `isContainerNode()`, `hasPlacement()`
+  - **Token Categories for Parser**:
+    - Component tokens: `GRID`, `CARD`, `BUTTON`, etc. (14 types)
+    - Placement tokens: `AT_COLUMN`, `SPAN`, `ROW`, `ROW_SPAN` (4 types)
+    - Property tokens: `PROP_GAP`, `PROP_PAD`, etc. (11 types)
+    - Style tokens: `STYLE`, `SELECTOR_*`, `LBRACE`, `RBRACE` (9 types)
+    - Literals: `STRING`, `NUMBER`, `HEX_COLOR`, `IDENTIFIER`, `VARIABLE_REF`
+  - **See**: [T-002 Completion Notes](./T-002-lexer-and-ast.md#-completion-notes-2025-11-13) for full API details
 - Also references **T-001** for grammar specification:
   - ✅ **T-001 Complete (2025-11-13)**: DSL specification available at [docs/spec/DSL_SPEC_V1.md](../spec/DSL_SPEC_V1.md)
   - **Key references for implementation**:

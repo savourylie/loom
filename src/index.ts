@@ -1,0 +1,41 @@
+/**
+ * Loom DSL - Core lexer and AST types
+ * @module loom-dsl
+ */
+
+// Lexer exports
+export { Tokenizer } from './lexer/index.js';
+export type { Token } from './lexer/index.js';
+export {
+  TokenType,
+  COMPONENT_KEYWORDS,
+  STYLE_KEYWORDS,
+  PROPERTY_KEYWORDS,
+  BOOLEAN_PROPERTY_KEYWORDS,
+  STYLE_PROPERTY_KEYWORDS,
+  isComponentToken,
+  isPlacementToken,
+  isPropertyToken,
+  isStylePropertyToken,
+} from './lexer/index.js';
+
+// AST exports
+export type {
+  PlacementTokens,
+  Node,
+  Selector,
+  StyleRule,
+  Breakpoint,
+  Document,
+} from './ast/index.js';
+
+export {
+  createDocument,
+  createNode,
+  createStyleRule,
+  isContainerNode,
+  hasPlacement,
+} from './ast/index.js';
+
+// Error exports
+export { ErrorCode, ErrorSeverity, LexerError } from './errors/index.js';
