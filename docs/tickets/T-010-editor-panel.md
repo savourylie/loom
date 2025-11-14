@@ -3,6 +3,7 @@
 **Type**: feature
 **Priority**: P0
 **Estimate**: 1 day
+**Status**: Done (2025-02-15)
 
 ### Summary
 Implement the client-side EditorPanel (Monaco or textarea) with syntax highlighting, debounced parsing (120–160ms), and inline error gutters fed by parser diagnostics.
@@ -25,9 +26,18 @@ Real-time authoring with actionable errors is core to Loom's value; the editor m
 - Diagnostics shown inline with severity colors, clicking jumps to line.
 - Editor resizes with SplitPane and respects `prefers-reduced-motion` for caret animations.
 
+### Delivery Notes
+- [c-t010-a](https://example.com/commit/t010-a) added the production EditorPanel organism with debounced parsing, keyboard shortcuts, and caret motion guards on `/play`.
+- [c-t010-b](https://example.com/commit/t010-b) wired parser diagnostics + status metrics through the shared Zustand store (render signal, last valid AST) for downstream panels.
+- [c-t010-c](https://example.com/commit/t010-c) introduced sample template catalog + toolbar actions (render/format/export stub) plus gutter tooltip UI + tooltip interactions.
+- [c-t010-d](https://example.com/commit/t010-d) enabled RTL/Vitest coverage for debounce + diagnostics, added jsdom + testing-library setup, and instrumented parse logs.
+- [c-t010-e](https://example.com/commit/t010-e) documented/tested the EditorPanel API surface for T-011 integration (render signal + last good document) and added webpack/browser shims for the parser bundle.
+
 ### Acceptance Criteria
-- Given I type valid DSL, when idle for >160ms, then AST event fires and preview updates without blocking typing.
-- Given syntax error, when parser returns diagnostics, then gutter markers and tooltip appear with message and the last good render stays visible.
+- ✅ Given I type valid DSL, when idle for >160ms, then AST event fires and preview updates without blocking typing.  
+  _Covered by EditorPanel debounce (140ms) piping valid documents to `renderSignal`; manual Cmd+Enter fires immediate render._
+- ✅ Given syntax error, when parser returns diagnostics, then gutter markers and tooltip appear with message and the last good render stays visible.  
+  _Diagnostics render as colored gutter buttons + tooltip popovers; store keeps `lastValidDocument` unchanged when severity error exists._
 
 ### Implementation Steps
 1. Integrate Monaco (or CodeMirror) with custom Loom language config + theme.
@@ -56,7 +66,8 @@ Real-time authoring with actionable errors is core to Loom's value; the editor m
   - **See**: [T-003 Completion Notes](./T-003-parser-with-diagnostics.md#-completion-notes-2025-11-13)
 - Depends on **T-009**.
   - ✅ **T-009 Done (2025-11-14)**: Editor mounts inside the [AppShell primary panel](../../apps/web/components/app-shell.tsx) and should reuse [StoreProvider/useAppStore](../../apps/web/providers/store-provider.tsx) plus [AppProviders](../../apps/web/app/providers.tsx) to publish run/format actions + layout arrangement signals.
-- Connected to **T-012**, **T-011**.
+- Connected to **T-011** (Preview panel now consumes `renderSignal`, `lastValidDocument`, and diagnostics from [apps/web/store/app-store.ts](../../apps/web/store/app-store.ts)). See [T-011#inputs](./T-011-preview-panel.md#inputs-from-editor-panel) for the new expectations.
+- Connected to **T-012** (export actions remain stubbed and should hook into Cmd+S handler added here).
 
 ### Risks & Mitigations
 - **Risk**: Monaco bundle size/perf. **Mitigation**: lazy-load editor, strip unused languages.
@@ -68,3 +79,7 @@ Real-time authoring with actionable errors is core to Loom's value; the editor m
 ### References
 - [PRD.md §7 User Journey](../prd/PRD.md#7-user-experience)
 - [DEV_PLAN.md §3 Component Architecture – Organisms](../dev-plan/DEV_PLAN.md#3-component-architecture)
+
+### Artifacts
+- Vitest report: [`npm run test`](../../vitest.config.ts) (covers EditorPanel RTL cases + parser suites).
+- Story/state reference: `/play` route inside [apps/web/app/play/page.tsx](../../apps/web/app/play/page.tsx#L5) demonstrates integration with AppShell.

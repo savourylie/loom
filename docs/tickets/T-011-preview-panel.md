@@ -41,9 +41,14 @@ Users must see immediate visual feedback; PreviewPanel stitches together AST →
 ### Observability
 - Log render duration, node counts, fallback occurrences; expose stats overlay toggled via dev hotkey for profiling (feeds T-018).
 
+### Inputs From Editor Panel
+- Subscribe to `documentValue`, `lastValidDocument`, `diagnostics`, and `renderSignal` via [apps/web/store/app-store.ts](../../apps/web/store/app-store.ts#L1) to know when a new AST should trigger layout/render work.
+- React to Cmd+Enter run pulses and Cmd+S export stubs emitted by EditorPanel (T-010) to keep Preview and Export actions in sync.
+
 ### Dependencies / Related Tickets
 - Depends on **T-004**, **T-005**, **T-007**, **T-009**. _(Preview invokes [`layoutDocument`](../../src/index.ts#L56) and now calls [`render()`](../../src/renderer/index.ts#L42) with skin data derived via [`skinSettingsFromGlobals()`](../../src/renderer/skin.ts#L178) / [`resolveSkinTokens()`](../../src/renderer/skin.ts#L166) so style globals toggle clean vs sketch output.)_
   - ✅ **T-009 Done (2025-11-14)**: Mount PreviewPanel inside the [AppShell secondary panel](../../apps/web/components/app-shell.tsx) and subscribe to layout sizing + theming by reading [useAppStore](../../apps/web/providers/store-provider.tsx) and [ThemeProvider](../../apps/web/components/theme-provider.tsx).
+- Depends on **T-010** for editor outputs. Preview must read `documentValue`, `lastValidDocument`, `diagnostics`, and `renderSignal` from [apps/web/store/app-store.ts](../../apps/web/store/app-store.ts) plus handle run events triggered via Cmd+Enter/Cmd+S shortcuts emitted by EditorPanel.
 - Supports **T-008**, **T-013**, **T-014**, **T-018**.
 
 ### Risks & Mitigations

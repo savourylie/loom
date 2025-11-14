@@ -64,3 +64,34 @@
     @apply rounded-2xl border bg-card/70 shadow-sm backdrop-blur;
   }
 }
+
+@layer components {
+  [data-loom-editor="true"] {
+    caret-color: hsl(var(--primary));
+    font-feature-settings: "liga" 0;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    [data-loom-editor="true"]:focus-visible {
+      animation: loomCaretPulse 1.8s ease-in-out infinite;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    [data-loom-editor="true"]:focus-visible {
+      animation: none;
+    }
+  }
+}
+
+@keyframes loomCaretPulse {
+  0% {
+    box-shadow: 0 0 0 0 hsl(var(--primary) / 0.25);
+  }
+  70% {
+    box-shadow: 0 0 0 6px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}

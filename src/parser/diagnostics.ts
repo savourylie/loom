@@ -9,6 +9,7 @@ import { ParserError } from './errors.js';
  * Structured diagnostic suitable for editor integration
  */
 export interface Diagnostic {
+  id?: number;
   code: string;
   severity: 'error' | 'warning' | 'info';
   message: string;
@@ -24,6 +25,7 @@ export interface Diagnostic {
 export class DiagnosticCollector {
   private diagnostics: Diagnostic[] = [];
   private readonly maxDiagnostics: number;
+  private diagnosticIdCounter = 0;
 
   constructor(maxDiagnostics: number = 10) {
     this.maxDiagnostics = maxDiagnostics;
@@ -47,6 +49,7 @@ export class DiagnosticCollector {
     }
 
     this.diagnostics.push({
+      id: this.diagnosticIdCounter++,
       code,
       severity,
       message,
@@ -109,6 +112,7 @@ export class DiagnosticCollector {
    */
   clear(): void {
     this.diagnostics = [];
+    this.diagnosticIdCounter = 0;
   }
 
   /**

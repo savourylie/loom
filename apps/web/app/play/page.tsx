@@ -1,19 +1,5 @@
 import { AppShell } from "@/components/app-shell";
-import { Button } from "@/components/ui/button";
-
-const sampleDocument = `grid 12 gap 16 pad 24
-
-card hero {
-  place c1/7 r1
-  label "loom.hero"
-  props accent="brand"
-}
-
-stack controls {
-  place c7/13 r1
-  props tone="muted"
-}
-`;
+import { EditorPanel } from "@/components/editor-panel";
 
 export default function PlayPage() {
   return (
@@ -22,10 +8,10 @@ export default function PlayPage() {
       description="Draft layouts, preview them instantly, and export SVG once the compiler is wired up. This shell keeps the layout flexible while we build the editor and renderer."
       primaryPanel={{
         title: "Editor Panel",
-        description:
-          "Multi-line DSL editor with Monaco + diagnostics will mount here.",
-        body: <EditorPlaceholder />,
-        footer: "Autosave + parser integration ship with T-010.",
+        description: "Write Loom DSL with live parsing, gutter markers, and template presets.",
+        body: <EditorPanel />,
+        footer:
+          "Parser + diagnostics run every ~140ms; Cmd+Enter re-renders & Cmd+S fires export stub.",
       }}
       secondaryPanel={{
         title: "Preview Panel",
@@ -35,28 +21,6 @@ export default function PlayPage() {
         footer: "Renderer + export pipeline lands in T-011/T-012.",
       }}
     />
-  );
-}
-
-function EditorPlaceholder() {
-  return (
-    <div className="flex h-full flex-col gap-4">
-      <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
-        <span>Loom DSL · draft</span>
-        <span className="rounded-full border px-2 py-0.5">⌘ + Enter</span>
-      </div>
-      <textarea
-        readOnly
-        value={sampleDocument}
-        className="flex-1 rounded-2xl border bg-background/70 p-4 font-mono text-sm leading-relaxed shadow-inner focus:outline-none"
-      />
-      <div className="flex flex-wrap items-center justify-end gap-2">
-        <Button variant="ghost" size="sm">
-          Format
-        </Button>
-        <Button size="sm">Render preview</Button>
-      </div>
-    </div>
   );
 }
 
