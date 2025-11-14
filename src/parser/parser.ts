@@ -689,12 +689,11 @@ export class Parser {
     if (token.type === TokenType.DOT) {
       const dotToken = this.advance();
       if (!this.check(TokenType.IDENTIFIER)) {
-        const next = this.peek();
         this.addError(
           ErrorCode.INVALID_SELECTOR,
           `Expected class name after '.'`,
-          next.line,
-          next.column,
+          dotToken.line,
+          dotToken.column,
         );
         return null;
       }
@@ -705,12 +704,11 @@ export class Parser {
     if (token.type === TokenType.HASH) {
       const hashToken = this.advance();
       if (!this.check(TokenType.IDENTIFIER)) {
-        const next = this.peek();
         this.addError(
           ErrorCode.INVALID_SELECTOR,
           `Expected ID name after '#'`,
-          next.line,
-          next.column,
+          hashToken.line,
+          hashToken.column,
         );
         return null;
       }
@@ -830,7 +828,6 @@ export class Parser {
       while (this.check(TokenType.DOT)) {
         const dotToken = this.advance();
         if (!this.check(TokenType.IDENTIFIER)) {
-          const next = this.peek();
           this.addError(
             ErrorCode.UNEXPECTED_TOKEN,
             `Expected identifier after '.' in style property`,
@@ -916,7 +913,6 @@ export class Parser {
           `Variables cannot reference other variables ('${refToken.raw}')`,
           refToken.line,
           refToken.column,
-          undefined,
           'Assign literal values instead of referencing another variable',
         );
         return undefined;
@@ -931,7 +927,6 @@ export class Parser {
           `Variable '$${refToken.value}' is not defined`,
           refToken.line,
           refToken.column,
-          undefined,
           `Define variable with: let ${refToken.value} = <value>`,
         );
         return undefined;

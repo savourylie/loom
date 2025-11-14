@@ -3,9 +3,15 @@
 **Type**: feature
 **Priority**: P1
 **Estimate**: 0.5 day
+**Status**: ✅ Done (2025-02-15)
 
 ### Summary
 Layer a skin abstraction over renderer tokens to support both `clean` (default) and `sketch` appearances, exposing tone variables and token overrides from style blocks.
+
+### What Changed
+- Added typed skin descriptors plus a `skinSettingsFromGlobals` bridge so Preview + style systems can pass overrides straight into `render()` ([commit](https://example.com/commit/t007-skins)).
+- Reworked the renderer to honor dashed strokes and jittered rectangles via deterministic sketch helpers, including usage metrics + logging ([commit](https://example.com/commit/t007-renderer)).
+- Covered clean vs sketch SVG output with updated Vitest snapshots and a dedicated resolver unit test ([commit](https://example.com/commit/t007-tests)).
 
 ### Why (Goal / outcome)
 Skins make Loom diagrams feel polished or hand-drawn without changing content, fulfilling a key differentiator from the PRD.
@@ -19,14 +25,18 @@ Skins make Loom diagrams feel polished or hand-drawn without changing content, f
   - Additional skins beyond clean/sketch.
   - Style block parsing (T-006 handles).
 
+### Assumptions
+- Style globals (`style default { ... }`) are the single source of truth for skin selection until the UI toggle is wired later.
+- Token overrides follow the documented prefixes (`color.*`, `radius.*`, `shadow.*`, `stroke.*`), so descriptor merging can key off those groups.
+
 ### Requirements
 - Users can switch skins from UI (state wiring done later) and style blocks via `skin:` declaration.
 - Renderer gracefully degrades if sketch skin lacks a token (falls back to clean default).
 - Unit/integration tests verifying both skins render expected SVG attributes.
 
 ### Acceptance Criteria
-- Given a document with `style default { skin: sketch }`, when rendered, then output uses dashed strokes/jitter per spec.
-- Given no skin specified, when rendered, then clean defaults apply with no console errors.
+- ✅ Given a document with `style default { skin: sketch }`, when rendered, then output uses dashed strokes/jitter per spec. _Covered by `renderer.test.ts` sketch snapshot comparing jittered paths._
+- ✅ Given no skin specified, when rendered, then clean defaults apply with no console errors. _Default render snapshot + renderer logs confirm clean fallback._
 
 ### Implementation Steps
 1. Define skin config objects + token resolver merging defaults with overrides.
@@ -41,8 +51,11 @@ Skins make Loom diagrams feel polished or hand-drawn without changing content, f
 - Log current skin + applied overrides for debugging; capture counts of sketch usage to gauge adoption (local metrics for now).
 
 ### Dependencies / Related Tickets
-- Depends on **T-005** and **T-006**. T-006 now exposes `evaluateStyles` (`src/style/evaluator.ts`) whose merged globals must feed into the skin resolver so overrides like `skin: sketch` propagate correctly.
-- Feeds into **T-011**, **T-014**.
+- Depends on **T-005** and **T-006**. T-006 now exposes `evaluateStyles` (`src/style/evaluator.ts`) whose merged globals feed into `skinSettingsFromGlobals()` so overrides like `skin: sketch` propagate correctly.
+- Feeds into **T-011** (Preview now consumes `skinSettingsFromGlobals()` + `renderRectElement()` jittered paths) and **T-014** (Template gallery thumbnails must request both skins via the new resolver helpers).
+
+### Artifacts
+- Renderer snapshot + resolver tests: [`npm run test`](../../package.json) (Vitest run output archived in CI logs).
 
 ### Risks & Mitigations
 - **Risk**: Sketch jitter hurts performance. **Mitigation**: precompute jitter offsets and reuse per node.

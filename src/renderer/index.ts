@@ -39,6 +39,8 @@ const COMPONENT_RENDERERS: Record<string, BoxRenderer> = {
   tabs: renderTabs,
 };
 
+let sketchUsageCount = 0;
+
 export function render(boxes: LayoutBox[] = [], skinSettings?: SkinSettings): RenderResult {
   const start = performance.now();
   const skin = resolveSkinTokens(skinSettings);
@@ -84,10 +86,13 @@ export function render(boxes: LayoutBox[] = [], skinSettings?: SkinSettings): Re
 </svg>`;
 
   metrics.renderTimeMs = Number((performance.now() - start).toFixed(2));
+  if (skin.name === 'sketch') {
+    sketchUsageCount++;
+  }
 
   if (process.env.NODE_ENV !== 'test') {
     console.info(
-      `[renderer] Rendered ${metrics.nodeCount} nodes in ${metrics.renderTimeMs}ms (sanitized text: ${metrics.sanitizedTextCount})`,
+      `[renderer] Rendered ${metrics.nodeCount} nodes in ${metrics.renderTimeMs}ms (skin: ${skin.name}, overrides: ${countSkinOverrides(skinSettings?.overrides)}, sketchUsage: ${sketchUsageCount}, sanitized text: ${metrics.sanitizedTextCount})`,
     );
   }
 
@@ -112,12 +117,21 @@ function renderBox(box: LayoutBox, ctx: RenderContext): string | undefined {
 }
 
 function renderCard(box: LayoutBox, ctx: RenderContext): string {
-  const attrs = nodeAttrs(box, ['loom-card']);
+  const attrs = `${nodeAttrs(box, ['loom-card'])} filter="url(#${ctx.cardShadowId})"`;
   const { tokens } = ctx;
   const fill = getSurfaceFill(box.tone, tokens);
-  const filter = `filter="url(#${ctx.cardShadowId})"`;
 
-  return `<rect ${attrs} x="${box.x}" y="${box.y}" width="${box.width}" height="${box.height}" rx="${tokens.radii.card}" ry="${tokens.radii.card}" fill="${fill}" stroke="${tokens.palette.stroke}" stroke-width="${tokens.stroke.width}" ${filter} />`;
+  return renderRectElement(ctx, {
+    attrs,
+    x: box.x,
+    y: box.y,
+    width: box.width,
+    height: box.height,
+    radius: tokens.radii.card,
+    fill,
+    stroke: tokens.palette.stroke,
+    seed: `${box.id}-card`,
+  });
 }
 
 function renderText(box: LayoutBox, ctx: RenderContext): string | undefined {
@@ -142,7 +156,16 @@ function renderButton(box: LayoutBox, ctx: RenderContext): string {
   const textY = box.y + box.height / 2 + 1;
 
   return `<g ${attrs}>
-    <rect x="${box.x}" y="${box.y}" width="${box.width}" height="${box.height}" rx="${ctx.tokens.radii.control}" ry="${ctx.tokens.radii.control}" fill="${variant.fill}" stroke="${variant.stroke}" stroke-width="${ctx.tokens.stroke.width}" />
+    ${renderRectElement(ctx, {
+      x: box.x,
+      y: box.y,
+      width: box.width,
+      height: box.height,
+      radius: ctx.tokens.radii.control,
+      fill: variant.fill,
+      stroke: variant.stroke,
+      seed: `${box.id}-button`,
+    })}
     <text class="loom-button__label" x="${box.x + box.width / 2}" y="${textY}" fill="${variant.text}" font-size="${ctx.tokens.typography.buttonSize}" font-weight="${ctx.tokens.typography.weightBold}" text-anchor="middle" dominant-baseline="middle">${label}</text>
   </g>`;
 }
@@ -153,20 +176,41 @@ function renderInput(box: LayoutBox, ctx: RenderContext): string {
   const textY = box.y + box.height / 2 + 1;
 
   return `<g ${attrs}>
-    <rect x="${box.x}" y="${box.y}" width="${box.width}" height="${box.height}" rx="${ctx.tokens.radii.control}" ry="${ctx.tokens.radii.control}" fill="${ctx.tokens.palette.surface}" stroke="${ctx.tokens.palette.stroke}" stroke-width="${ctx.tokens.stroke.width}" />
+    ${renderRectElement(ctx, {
+      x: box.x,
+      y: box.y,
+      width: box.width,
+      height: box.height,
+      radius: ctx.tokens.radii.control,
+      fill: ctx.tokens.palette.surface,
+      stroke: ctx.tokens.palette.stroke,
+      seed: `${box.id}-input`,
+    })}
     <text x="${box.x + 12}" y="${textY}" fill="${ctx.tokens.palette.placeholder}" font-size="${ctx.tokens.typography.baseSize}" font-weight="${ctx.tokens.typography.weightRegular}" dominant-baseline="middle">${label}</text>
   </g>`;
 }
 
 function renderImage(box: LayoutBox, ctx: RenderContext): string {
   const attrs = nodeAttrs(box, ['loom-image']);
-  const { palette, stroke } = ctx.tokens;
+  const { palette } = ctx.tokens;
   const pad = 12;
+  const strokeAttrs = formatStrokeAttributes(ctx.tokens, { dashed: false });
+  const strokeSegment = strokeAttrs ? ` ${strokeAttrs}` : '';
 
   return `<g ${attrs}>
-    <rect x="${box.x}" y="${box.y}" width="${box.width}" height="${box.height}" rx="${ctx.tokens.radii.card}" ry="${ctx.tokens.radii.card}" fill="${palette.surfaceAlt}" stroke="${palette.stroke}" stroke-width="${stroke.width}" />
-    <path d="M ${box.x + pad} ${box.y + pad} L ${box.x + box.width - pad} ${box.y + box.height - pad}" stroke="${palette.mutedStroke}" stroke-width="${stroke.width}" />
-    <path d="M ${box.x + pad} ${box.y + box.height - pad} L ${box.x + box.width - pad} ${box.y + pad}" stroke="${palette.mutedStroke}" stroke-width="${stroke.width}" />
+    ${renderRectElement(ctx, {
+      x: box.x,
+      y: box.y,
+      width: box.width,
+      height: box.height,
+      radius: ctx.tokens.radii.card,
+      fill: palette.surfaceAlt,
+      stroke: palette.stroke,
+      seed: `${box.id}-image`,
+      jitter: true,
+    })}
+    <path d="M ${box.x + pad} ${box.y + pad} L ${box.x + box.width - pad} ${box.y + box.height - pad}" stroke="${palette.mutedStroke}"${strokeSegment} />
+    <path d="M ${box.x + pad} ${box.y + box.height - pad} L ${box.x + box.width - pad} ${box.y + pad}" stroke="${palette.mutedStroke}"${strokeSegment} />
   </g>`;
 }
 
@@ -201,7 +245,16 @@ function renderList(box: LayoutBox, ctx: RenderContext): string {
   }
 
   return `<g ${attrs}>
-    <rect x="${box.x}" y="${box.y}" width="${box.width}" height="${box.height}" rx="${ctx.tokens.radii.card}" ry="${ctx.tokens.radii.card}" fill="${ctx.tokens.palette.surface}" stroke="${ctx.tokens.palette.stroke}" stroke-width="${ctx.tokens.stroke.width}" />
+    ${renderRectElement(ctx, {
+      x: box.x,
+      y: box.y,
+      width: box.width,
+      height: box.height,
+      radius: ctx.tokens.radii.card,
+      fill: ctx.tokens.palette.surface,
+      stroke: ctx.tokens.palette.stroke,
+      seed: `${box.id}-list`,
+    })}
     ${elements}
   </g>`;
 }
@@ -221,9 +274,19 @@ function renderTabs(box: LayoutBox, ctx: RenderContext): string {
     const stroke = isActive ? ctx.tokens.palette.stroke : ctx.tokens.palette.mutedStroke;
     const label = `Tab ${i + 1}`;
     const width = Math.max(48, tabWidth - 8);
+    const rectMarkup = renderRectElement(ctx, {
+      x,
+      y,
+      width,
+      height: tabHeight,
+      radius: ctx.tokens.radii.control,
+      fill,
+      stroke,
+      seed: `${box.id}-tab-${i}`,
+    });
 
     elements += `<g class="loom-tab${isActive ? ' is-active' : ''}">
-      <rect x="${x}" y="${y}" width="${width}" height="${tabHeight}" rx="${ctx.tokens.radii.control}" ry="${ctx.tokens.radii.control}" fill="${fill}" stroke="${stroke}" stroke-width="${ctx.tokens.stroke.width}" />
+      ${rectMarkup}
       <text x="${x + width / 2}" y="${y + tabHeight / 2}" text-anchor="middle" dominant-baseline="middle" font-size="${ctx.tokens.typography.baseSize}" font-weight="${isActive ? ctx.tokens.typography.weightBold : ctx.tokens.typography.weightRegular}" fill="${ctx.tokens.palette.textMuted}">${label}</text>
     </g>`;
   }
@@ -236,7 +299,17 @@ function renderTabs(box: LayoutBox, ctx: RenderContext): string {
 function renderFallback(box: LayoutBox, ctx: RenderContext): string {
   const attrs = nodeAttrs(box, ['loom-fallback']);
 
-  return `<rect ${attrs} x="${box.x}" y="${box.y}" width="${box.width}" height="${box.height}" rx="${ctx.tokens.radii.control}" ry="${ctx.tokens.radii.control}" fill="${ctx.tokens.palette.surfaceAlt}" stroke="${ctx.tokens.palette.stroke}" stroke-width="${ctx.tokens.stroke.width}" />`;
+  return renderRectElement(ctx, {
+    attrs,
+    x: box.x,
+    y: box.y,
+    width: box.width,
+    height: box.height,
+    radius: ctx.tokens.radii.control,
+    fill: ctx.tokens.palette.surfaceAlt,
+    stroke: ctx.tokens.palette.stroke,
+    seed: `${box.id}-fallback`,
+  });
 }
 
 function flattenBoxes(nodes: LayoutBox[]): LayoutBox[] {
@@ -407,6 +480,161 @@ function getButtonVariant(tone: string | undefined, tokens: SkinTokens): {
         text: '#FFFFFF',
       };
   }
+}
+
+interface RectElementOptions {
+  attrs?: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  radius?: number;
+  fill: string;
+  stroke: string;
+  seed: string;
+  jitter?: boolean;
+  dashed?: boolean;
+}
+
+function renderRectElement(ctx: RenderContext, options: RectElementOptions): string {
+  const { tokens } = ctx;
+  const attrSegment =
+    options.attrs && options.attrs.trim().length > 0 ? `${options.attrs.trim()} ` : '';
+  const strokeAttrs = formatStrokeAttributes(tokens, { dashed: options.dashed });
+  const strokeSegment = strokeAttrs ? ` ${strokeAttrs}` : '';
+  const radius = Math.max(
+    0,
+    Math.min(options.radius ?? 0, Math.min(options.width, options.height) / 2),
+  );
+  const jitterEnabled =
+    options.jitter !== false && tokens.jitter.enabled && tokens.jitter.amplitude > 0;
+
+  if (jitterEnabled) {
+    const seed = `${options.seed}:${tokens.jitter.seedOffset}`;
+    const path = createSketchRectPath(
+      options.x,
+      options.y,
+      options.width,
+      options.height,
+      radius,
+      tokens.jitter.amplitude,
+      seed,
+    );
+    return `<path ${attrSegment}d="${path}" fill="${options.fill}" stroke="${options.stroke}"${strokeSegment} />`;
+  }
+
+  const radiusAttrs = radius > 0 ? ` rx="${radius}" ry="${radius}"` : '';
+  return `<rect ${attrSegment}x="${options.x}" y="${options.y}" width="${options.width}" height="${options.height}"${radiusAttrs} fill="${options.fill}" stroke="${options.stroke}"${strokeSegment} />`;
+}
+
+function formatStrokeAttributes(
+  tokens: SkinTokens,
+  options?: { dashed?: boolean; width?: number },
+): string {
+  const attrs: string[] = [`stroke-width="${options?.width ?? tokens.stroke.width}"`];
+  if (tokens.stroke.linecap) {
+    attrs.push(`stroke-linecap="${tokens.stroke.linecap}"`);
+  }
+  if (tokens.stroke.dasharray && options?.dashed !== false) {
+    attrs.push(`stroke-dasharray="${tokens.stroke.dasharray}"`);
+  }
+  return attrs.join(' ');
+}
+
+function createSketchRectPath(
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number,
+  jitter: number,
+  seed: string,
+): string {
+  const rand = createSeededRandom(`${seed}:${width}:${height}`);
+  const r = Math.max(0, Math.min(radius, Math.min(width, height) / 2));
+
+  const start = jitterPoint(x + r, y, jitter, rand);
+  const topRight = jitterPoint(x + width - r, y, jitter, rand);
+  const topRightCtrl = jitterPoint(x + width, y, jitter, rand);
+  const rightTop = jitterPoint(x + width, y + r, jitter, rand);
+  const rightBottom = jitterPoint(x + width, y + height - r, jitter, rand);
+  const bottomRightCtrl = jitterPoint(x + width, y + height, jitter, rand);
+  const bottomRight = jitterPoint(x + width - r, y + height, jitter, rand);
+  const bottomLeft = jitterPoint(x + r, y + height, jitter, rand);
+  const bottomLeftCtrl = jitterPoint(x, y + height, jitter, rand);
+  const leftBottom = jitterPoint(x, y + height - r, jitter, rand);
+  const leftTop = jitterPoint(x, y + r, jitter, rand);
+  const topLeftCtrl = jitterPoint(x, y, jitter, rand);
+  const topLeft = jitterPoint(x + r, y, jitter, rand);
+
+  return [
+    `M ${start.x} ${start.y}`,
+    `L ${topRight.x} ${topRight.y}`,
+    `Q ${topRightCtrl.x} ${topRightCtrl.y} ${rightTop.x} ${rightTop.y}`,
+    `L ${rightBottom.x} ${rightBottom.y}`,
+    `Q ${bottomRightCtrl.x} ${bottomRightCtrl.y} ${bottomRight.x} ${bottomRight.y}`,
+    `L ${bottomLeft.x} ${bottomLeft.y}`,
+    `Q ${bottomLeftCtrl.x} ${bottomLeftCtrl.y} ${leftBottom.x} ${leftBottom.y}`,
+    `L ${leftTop.x} ${leftTop.y}`,
+    `Q ${topLeftCtrl.x} ${topLeftCtrl.y} ${topLeft.x} ${topLeft.y}`,
+    'Z',
+  ].join(' ');
+}
+
+function jitterPoint(
+  x: number,
+  y: number,
+  amplitude: number,
+  rand: () => number,
+): { x: number; y: number } {
+  if (amplitude <= 0) {
+    return { x, y };
+  }
+  const offset = (): number => (rand() - 0.5) * 2 * amplitude;
+  return {
+    x: Number((x + offset()).toFixed(2)),
+    y: Number((y + offset()).toFixed(2)),
+  };
+}
+
+function createSeededRandom(seed: string): () => number {
+  let h = 1779033703 ^ seed.length;
+  for (let i = 0; i < seed.length; i++) {
+    h = Math.imul(h ^ seed.charCodeAt(i), 3432918353);
+    h = (h << 13) | (h >>> 19);
+  }
+
+  return function next(): number {
+    h = Math.imul(h ^ (h >>> 16), 2246822507);
+    h = Math.imul(h ^ (h >>> 13), 3266489909);
+    return ((h ^= h >>> 16) >>> 0) / 4294967296;
+  };
+}
+
+function countSkinOverrides(overrides: SkinSettings['overrides']): number {
+  if (!overrides) {
+    return 0;
+  }
+  let count = 0;
+  if (overrides.palette) {
+    count += Object.keys(overrides.palette).length;
+  }
+  if (overrides.radii) {
+    count += Object.keys(overrides.radii).length;
+  }
+  if (overrides.typography) {
+    count += Object.keys(overrides.typography).length;
+  }
+  if (overrides.stroke) {
+    count += Object.keys(overrides.stroke).length;
+  }
+  if (overrides.shadows?.card) {
+    count += Object.keys(overrides.shadows.card).length;
+  }
+  if (overrides.jitter) {
+    count += Object.keys(overrides.jitter).length;
+  }
+  return count;
 }
 
 function tintColor(hex: string, ratio: number): string {

@@ -8,7 +8,7 @@
 | T-004 | Implement Layout Engine for Grid & Stacks | feature | P0 | 1 day | ✅ Done (2025-02-14) | T-003 |
 | T-005 | Build SVG Renderer With Clean Skin Defaults | feature | P0 | 1 day | ✅ Done (2025-02-14) | T-004 |
 | T-006 | Implement Style Block Parser & Selector Engine | feature | P0 | 1 day | ✅ Done (2025-02-14) | T-003 |
-| T-007 | Deliver Skin System & Sketch Variant | feature | P1 | 0.5 day | Not Started | T-005, T-006 |
+| T-007 | Deliver Skin System & Sketch Variant | feature | P1 | 0.5 day | ✅ Done (2025-02-15) | T-005, T-006 |
 | T-008 | Implement Breakpoint & Conditional Blocks | feature | P1 | 0.5 day | Not Started | T-003, T-004, T-011 |
 | T-009 | Scaffold Next.js App Shell & Routing | feature | P0 | 0.5 day | Not Started | - |
 | T-010 | Build Editor Panel With Live Diagnostics | feature | P0 | 1 day | Not Started | T-003, T-009 |

@@ -70,5 +70,5 @@ export type {
 // Renderer exports
 export { render } from './renderer/index.js';
 export type { RenderMetrics, RenderResult } from './renderer/index.js';
-export { resolveSkinTokens } from './renderer/skin.js';
+export { resolveSkinTokens, skinSettingsFromGlobals } from './renderer/skin.js';
 export type { SkinName, SkinSettings, SkinTokens, SkinTokensOverride } from './renderer/skin.js';

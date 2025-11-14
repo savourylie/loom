@@ -40,7 +40,7 @@ Templates accelerate onboarding and satisfy PRD success criteria for zero-config
 - Log template load events (template id, source route: gallery or dropdown) to console to understand popularity.
 
 ### Dependencies / Related Tickets
-- Depends on **T-009**, **T-011**, **T-012**. _(Thumbnail generator script will call [`render()`](../../src/renderer/index.ts#L42) to ensure previews match the clean skin defaults.)_
+- Depends on **T-009**, **T-011**, **T-012**. _(Template previews call [`render()`](../../src/renderer/index.ts#L42) with `skinSettingsFromGlobals()` data so each sample can advertise both clean + sketch skins without hand-tuned SVGs.)_
 
 ### Risks & Mitigations
 - **Risk**: Thumbnail drift vs renderer updates. **Mitigation**: generate thumbnails via script tied to renderer commit hash.
