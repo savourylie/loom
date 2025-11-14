@@ -1,6 +1,7 @@
 import { Document, Node, isContainerNode } from '../ast/types.js';
 import { ErrorCode, ErrorSeverity } from '../errors/index.js';
 import { DiagnosticCollector } from '../parser/diagnostics.js';
+import { evaluateBreakpoints } from '../breakpoints/index.js';
 import type { LayoutBox, LayoutOptions, LayoutResult } from './types.js';
 import { createLayoutSignature } from './types.js';
 import type { LayoutMemoHooks } from './types.js';
@@ -198,6 +199,7 @@ export function layoutDocument(document: Document, options: LayoutOptions = {}):
   const viewportWidth = options.viewportWidth ?? DEFAULT_VIEWPORT_WIDTH;
   const viewportHeight = options.viewportHeight ?? DEFAULT_VIEWPORT_HEIGHT;
   const rootGap = (options.rootGapUnits ?? DEFAULT_ROOT_GAP_UNITS) * unit;
+  const { document: activeDocument } = evaluateBreakpoints(document, viewportWidth);
   const diagnostics = new DiagnosticCollector(options.diagnosticsLimit ?? 10);
 
   const ctx: LayoutContext = {
@@ -218,7 +220,7 @@ export function layoutDocument(document: Document, options: LayoutOptions = {}):
 
   const startTime = performance.now();
 
-  for (const node of document.nodes) {
+  for (const node of activeDocument.nodes) {
     const box = layoutNode(node, { availableWidth: viewportWidth, availableHeight: viewportHeight }, ctx, 0);
     offsetBox(box, 0, yCursor);
     boxes.push(box);

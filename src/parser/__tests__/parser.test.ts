@@ -451,16 +451,51 @@ button "Test"
     });
   });
 
-  describe('Stub features (when)', () => {
-    it('recognizes when blocks (stubbed)', () => {
-      const input = `when >768 {}
-button "Test"
-`;
+  describe('Breakpoints (when blocks)', () => {
+    it('parses breakpoint nodes and style overrides', () => {
+      const input = `grid cols:12 gap:2
+when <600 {
+  vstack gap:1
+    text "Mobile"
+
+  style default {
+    gap: 1
+  }
+}`;
+
+      const result = parseDocument(input);
+      expect(result.document.breakpoints).toHaveLength(1);
+      const breakpoint = result.document.breakpoints?.[0]!;
+      expect(breakpoint.condition).toBe('<600');
+      expect(breakpoint.nodes).toHaveLength(1);
+      expect(breakpoint.nodes?.[0]?.type).toBe('vstack');
+      expect(breakpoint.styles).toHaveLength(1);
+      expect(breakpoint.styles?.[0]?.selector.type).toBe('default');
+      expect(result.diagnostics).toHaveLength(0);
+    });
+
+    it('warns on overlapping breakpoint ranges', () => {
+      const input = `when <700 {
+  vstack gap:1
+}
+
+when <600 {
+  hstack gap:1
+}`;
+
       const result = parseDocument(input);
 
-      // When blocks are still stubbed
-      expect(result.document.nodes).toHaveLength(1);
-      expect(result.document.nodes[0]!.type).toBe('button');
+      expect(result.diagnostics.some((d) => d.code === ErrorCode.BREAKPOINT_OVERLAP)).toBe(true);
+    });
+
+    it('warns when breakpoint conditions cannot match any width', () => {
+      const input = `when >=800 <600 {
+  card "Impossible"
+}`;
+
+      const result = parseDocument(input);
+
+      expect(result.diagnostics.some((d) => d.code === ErrorCode.BREAKPOINT_CONDITION_CONFLICT)).toBe(true);
     });
   });
 });

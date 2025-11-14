@@ -10,6 +10,10 @@ import {
   Document,
   PlacementTokens,
   Selector,
+  StyleRule,
+  Breakpoint,
+  BreakpointCondition,
+  BreakpointRange,
   createDocument,
   createNode,
   createStyleRule,
@@ -199,7 +203,7 @@ export class Parser {
 
       // When blocks (stubbed for now per plan)
       if (token.type === TokenType.WHEN) {
-        this.parseWhenBlock();
+        this.parseWhenBlock(document);
         continue;
       }
 
@@ -226,6 +230,8 @@ export class Parser {
       );
       this.synchronize();
     }
+
+    this.validateBreakpointConflicts(document);
 
     return document;
   }
@@ -513,15 +519,15 @@ export class Parser {
   }
 
   /**
-   * Stub: Parse style block (TODO: implement in T-006/T-007)
+   * Parse style block and optional nested let statements
    */
-  private parseStyleBlock(document: Document): void {
+  private parseStyleBlock(document: Document, targetStyles?: StyleRule[]): StyleRule | null {
     const styleToken = this.advance(); // Consume 'style'
     const selector = this.parseStyleSelector();
 
     if (!selector) {
       this.skipInvalidStyleBlock();
-      return;
+      return null;
     }
 
     this.skipStyleWhitespace();
@@ -535,7 +541,7 @@ export class Parser {
         token.column,
       );
       this.skipInvalidStyleBlock();
-      return;
+      return null;
     }
 
     this.advance(); // Consume '{'
@@ -629,8 +635,13 @@ export class Parser {
         styleToken.column,
       );
     }
-
-    document.styles.push(createStyleRule(selector, declarations));
+    const rule = createStyleRule(selector, declarations);
+    if (targetStyles) {
+      targetStyles.push(rule);
+    } else {
+      document.styles.push(rule);
+    }
+    return rule;
   }
 
   private parseLetStatement(document: Document, scope?: Map<string, unknown>): void {
@@ -962,24 +973,316 @@ export class Parser {
   }
 
   /**
-   * Stub: Parse when block (TODO: implement in T-006/T-007)
+   * Parse responsive when block with conditional nodes/style overrides
    */
-  private parseWhenBlock(): void {
-    this.advance(); // Consume 'when'
+  private parseWhenBlock(document: Document): void {
+    const whenToken = this.advance();
+    const conditionParts: string[] = [];
+    const expressions: BreakpointCondition[] = [];
 
-    // Skip tokens until closing brace or newline
-    while (!this.check(TokenType.RBRACE) && !this.check(TokenType.NEWLINE) && !this.isAtEnd()) {
-      this.advance();
+    while (!this.isAtEnd()) {
+      const token = this.peek();
+
+      if (token.type === TokenType.LBRACE) {
+        break;
+      }
+
+      if (
+        token.type === TokenType.NEWLINE ||
+        token.type === TokenType.SEMICOLON ||
+        token.type === TokenType.INDENT ||
+        token.type === TokenType.DEDENT
+      ) {
+        this.advance();
+        continue;
+      }
+
+      if (this.isBreakpointOperator(token.type)) {
+        const expression = this.parseBreakpointExpression();
+        if (!expression) {
+          this.skipInvalidStyleBlock();
+          return;
+        }
+        expressions.push(expression);
+        conditionParts.push(`${expression.operator}${expression.value}`);
+        continue;
+      }
+
+      this.addError(
+        ErrorCode.UNEXPECTED_TOKEN,
+        `Unexpected token '${token.raw}' in when condition`,
+        token.line,
+        token.column,
+        `Use comparison operators like '<600' or '>=1024'`,
+      );
+      this.skipInvalidStyleBlock();
+      return;
     }
 
-    if (this.check(TokenType.RBRACE)) {
-      this.advance();
+    if (expressions.length === 0) {
+      this.addError(
+        ErrorCode.MISSING_TOKEN,
+        `Expected breakpoint condition after 'when'`,
+        whenToken.line,
+        whenToken.column,
+        `Add a comparison such as '<600' or '>=1024' before the block body`,
+      );
+      this.skipInvalidStyleBlock();
+      return;
     }
 
-    // TODO: Implement full when block parsing in T-006/T-007
-    if (process.env.NODE_ENV !== 'test') {
-      console.log('[Parser] TODO: When block parsing not yet implemented');
+    this.skipStyleWhitespace();
+
+    if (!this.check(TokenType.LBRACE)) {
+      const token = this.peek();
+      this.addError(
+        ErrorCode.MISSING_TOKEN,
+        `Expected '{' to start when block`,
+        token.line,
+        token.column,
+      );
+      this.skipInvalidStyleBlock();
+      return;
     }
+
+    this.advance(); // Consume '{'
+
+    const nodes: Node[] = [];
+    const styles: StyleRule[] = [];
+    const previousSeenIds = this.seenIds;
+    this.seenIds = new Set();
+    let closed = false;
+
+    while (!this.isAtEnd()) {
+      const token = this.peek();
+
+      if (token.type === TokenType.RBRACE) {
+        this.advance();
+        closed = true;
+        break;
+      }
+
+      if (
+        token.type === TokenType.NEWLINE ||
+        token.type === TokenType.SEMICOLON ||
+        token.type === TokenType.INDENT ||
+        token.type === TokenType.DEDENT
+      ) {
+        this.advance();
+        continue;
+      }
+
+      if (token.type === TokenType.STYLE) {
+        this.parseStyleBlock(document, styles);
+        continue;
+      }
+
+      if (this.isComponentToken(token.type)) {
+        const node = this.parseNode();
+        if (node) {
+          nodes.push(node);
+        }
+        continue;
+      }
+
+      this.addError(
+        ErrorCode.UNEXPECTED_TOKEN,
+        `Unexpected token '${token.raw}' inside when block`,
+        token.line,
+        token.column,
+      );
+      this.synchronize();
+    }
+
+    this.seenIds = previousSeenIds;
+
+    if (!closed) {
+      this.addError(
+        ErrorCode.MISSING_TOKEN,
+        `Missing '}' to close when block started here`,
+        whenToken.line,
+        whenToken.column,
+      );
+    }
+
+    const conditionText = conditionParts.join(' ');
+    const range = this.createBreakpointRange(expressions);
+
+    if (range && !this.isBreakpointRangeSatisfiable(range)) {
+      this.diagnostics.add(
+        ErrorCode.BREAKPOINT_CONDITION_CONFLICT,
+        `Breakpoint condition '${conditionText}' cannot match any viewport width`,
+        whenToken.line,
+        whenToken.column,
+        ErrorSeverity.WARNING,
+        'Ensure the lower bound is less than the upper bound (or equal with inclusive operators).',
+      );
+    }
+
+    const breakpoint: Breakpoint = {
+      condition: conditionText,
+      conditions: expressions,
+      range,
+      line: whenToken.line,
+      column: whenToken.column,
+      nodes: nodes.length > 0 ? nodes : undefined,
+      styles: styles.length > 0 ? styles : undefined,
+    };
+
+    document.breakpoints = document.breakpoints ?? [];
+    document.breakpoints.push(breakpoint);
+  }
+
+  private parseBreakpointExpression(): BreakpointCondition | null {
+    const operatorToken = this.peek();
+    if (!this.isBreakpointOperator(operatorToken.type)) {
+      return null;
+    }
+
+    const operator = this.mapBreakpointOperator(operatorToken.type);
+    this.advance();
+
+    if (!this.check(TokenType.NUMBER)) {
+      const token = this.peek();
+      this.addError(
+        ErrorCode.MISSING_TOKEN,
+        `Expected number after '${operator}' in breakpoint condition`,
+        token.line,
+        token.column,
+      );
+      return null;
+    }
+
+    const valueToken = this.advance();
+    const value = valueToken.value as number;
+    return { operator, value };
+  }
+
+  private isBreakpointOperator(type: TokenType): boolean {
+    return (
+      type === TokenType.LT ||
+      type === TokenType.LTE ||
+      type === TokenType.GT ||
+      type === TokenType.GTE
+    );
+  }
+
+  private mapBreakpointOperator(type: TokenType): BreakpointCondition['operator'] {
+    switch (type) {
+      case TokenType.LT:
+        return '<';
+      case TokenType.LTE:
+        return '<=';
+      case TokenType.GT:
+        return '>';
+      case TokenType.GTE:
+        return '>=';
+      default:
+        return '<';
+    }
+  }
+
+  private createBreakpointRange(conditions: BreakpointCondition[] = []): BreakpointRange | undefined {
+    if (conditions.length === 0) {
+      return undefined;
+    }
+
+    const range: BreakpointRange = {};
+    for (const condition of conditions) {
+      if (condition.operator === '<' || condition.operator === '<=') {
+        if (range.max === undefined || condition.value < range.max) {
+          range.max = condition.value;
+          range.maxInclusive = condition.operator === '<=';
+        } else if (condition.value === range.max && range.maxInclusive && condition.operator === '<') {
+          range.maxInclusive = false;
+        }
+      } else {
+        if (range.min === undefined || condition.value > range.min) {
+          range.min = condition.value;
+          range.minInclusive = condition.operator === '>=';
+        } else if (condition.value === range.min && range.minInclusive && condition.operator === '>') {
+          range.minInclusive = false;
+        }
+      }
+    }
+    return range;
+  }
+
+  private isBreakpointRangeSatisfiable(range: BreakpointRange): boolean {
+    if (range.min === undefined || range.max === undefined) {
+      return true;
+    }
+
+    if (range.min < range.max) {
+      return true;
+    }
+
+    if (range.min === range.max) {
+      return Boolean(range.minInclusive && range.maxInclusive);
+    }
+
+    return false;
+  }
+
+  private validateBreakpointConflicts(document: Document): void {
+    const breakpoints = document.breakpoints ?? [];
+    if (breakpoints.length < 2) {
+      return;
+    }
+
+    for (let i = 0; i < breakpoints.length; i++) {
+      const current = breakpoints[i]!;
+      current.range = current.range ?? this.createBreakpointRange(current.conditions ?? []);
+      if (!current.range || !this.isBreakpointRangeSatisfiable(current.range)) {
+        continue;
+      }
+
+      for (let j = i + 1; j < breakpoints.length; j++) {
+        const next = breakpoints[j]!;
+        next.range = next.range ?? this.createBreakpointRange(next.conditions ?? []);
+        if (!next.range || !this.isBreakpointRangeSatisfiable(next.range)) {
+          continue;
+        }
+
+        if (this.rangesOverlap(current.range, next.range)) {
+          const line = next.line ?? 0;
+          const column = next.column ?? 0;
+          this.diagnostics.add(
+            ErrorCode.BREAKPOINT_OVERLAP,
+            `Breakpoint '${next.condition}' overlaps with '${current.condition}'. Later rules override earlier matches`,
+            line,
+            column,
+            ErrorSeverity.WARNING,
+            'Adjust range boundaries or ordering so only one condition matches a width.',
+          );
+        }
+      }
+    }
+  }
+
+  private rangesOverlap(a: BreakpointRange, b: BreakpointRange): boolean {
+    const aMin = a.min ?? Number.NEGATIVE_INFINITY;
+    const aMax = a.max ?? Number.POSITIVE_INFINITY;
+    const bMin = b.min ?? Number.NEGATIVE_INFINITY;
+    const bMax = b.max ?? Number.POSITIVE_INFINITY;
+
+    if (aMax < bMin) {
+      return false;
+    }
+
+    if (bMax < aMin) {
+      return false;
+    }
+
+    if (aMax === bMin) {
+      return Boolean((a.maxInclusive ?? false) && (b.minInclusive ?? false));
+    }
+
+    if (bMax === aMin) {
+      return Boolean((b.maxInclusive ?? false) && (a.minInclusive ?? false));
+    }
+
+    return true;
   }
 
   /**

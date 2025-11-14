@@ -66,12 +66,43 @@ export interface StyleRule {
   declarations: Record<string, unknown>;
 }
 
+/** Supported comparison operators for breakpoint expressions */
+export type BreakpointOperator = '<' | '<=' | '>=' | '>';
+
+/**
+ * Single comparison expression inside a when breakpoint
+ */
+export interface BreakpointCondition {
+  operator: BreakpointOperator;
+  value: number;
+}
+
+/**
+ * Computed numeric range represented by breakpoint expressions
+ */
+export interface BreakpointRange {
+  min?: number;
+  minInclusive?: boolean;
+  max?: number;
+  maxInclusive?: boolean;
+}
+
 /**
  * Breakpoint condition for responsive layouts
  */
 export interface Breakpoint {
   /** Condition string: '<600', '>=1024', etc. */
   condition: string;
+
+  /** Parsed comparison expressions */
+  conditions?: BreakpointCondition[];
+
+  /** Derived numeric range for overlap diagnostics */
+  range?: BreakpointRange;
+
+  /** Source position for diagnostics */
+  line?: number;
+  column?: number;
 
   /** Alternative node tree for this breakpoint */
   nodes?: Node[];

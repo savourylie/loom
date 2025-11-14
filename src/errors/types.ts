@@ -80,6 +80,9 @@ export enum ErrorCode {
   /** E204: Invalid component nesting */
   INVALID_NESTING = 'E204',
 
+  /** E205: Breakpoint condition is contradictory */
+  BREAKPOINT_CONDITION_CONFLICT = 'E205',
+
   // ===== Layout Errors (E301-E399) =====
   /** E301: Placement tokens used on non-grid child */
   PLACEMENT_WITHOUT_GRID = 'E301',
@@ -102,6 +105,9 @@ export enum ErrorCode {
 
   /** W503: Deeply nested structure may impact performance */
   DEEP_NESTING_WARNING = 'W503',
+
+  /** W504: Breakpoint conditions overlap */
+  BREAKPOINT_OVERLAP = 'W504',
 }
 
 /**

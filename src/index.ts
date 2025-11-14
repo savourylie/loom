@@ -37,6 +37,17 @@ export {
   hasPlacement,
 } from './ast/index.js';
 
+// Breakpoint exports
+export {
+  evaluateBreakpoints,
+  resetBreakpointInstrumentation,
+} from './breakpoints/index.js';
+export type {
+  BreakpointEvaluationResult,
+  BreakpointMetrics,
+  BreakpointMatchInfo,
+} from './breakpoints/index.js';
+
 // Error exports
 export { ErrorCode, ErrorSeverity, LexerError } from './errors/index.js';
 

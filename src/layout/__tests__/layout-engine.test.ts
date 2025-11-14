@@ -89,4 +89,21 @@ describe('layoutDocument', () => {
     expect(layout.diagnostics.length).toBeGreaterThan(0);
     expect(layout.diagnostics[0]?.code).toBe(ErrorCode.PLACEMENT_OUT_OF_BOUNDS);
   });
+
+  it('switches layout nodes when breakpoint matches viewport width', () => {
+    const input = `grid cols:4 gap:1
+  card "Desktop"
+
+when <600 {
+  vstack gap:1
+    text "Mobile"
+}`;
+    const result = parseDocument(input);
+
+    const mobileLayout = layoutDocument(result.document, { viewportWidth: 480, unit: 8 });
+    const desktopLayout = layoutDocument(result.document, { viewportWidth: 960, unit: 8 });
+
+    expect(mobileLayout.boxes[0]?.type).toBe('vstack');
+    expect(desktopLayout.boxes[0]?.type).toBe('grid');
+  });
 });

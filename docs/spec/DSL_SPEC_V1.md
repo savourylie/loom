@@ -941,6 +941,10 @@ when >=1024 {
 - Nodes in breakpoint blocks replace base layout nodes (not merged)
 - Style declarations in breakpoint blocks merge with base styles (cascade)
 
+**Runtime API:**
+- `evaluateBreakpoints(document, viewportWidth)` selects the last matching block and returns the nodes/styles that should be fed into layout/rendering.
+- The engine logs the active rule + width in dev builds and tracks fallback activations to help debug preview responsiveness.
+
 ---
 
 ## Performance Constraints
