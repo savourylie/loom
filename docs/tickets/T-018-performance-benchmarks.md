@@ -40,7 +40,7 @@ Performance is a launch-critical KPI; benchmarks prevent regressions and guide o
 - Benchmarks produce structured logs; overlay surfaces real-time metrics. Optionally log to console with `performance.mark` for browser devtools.
 
 ### Dependencies / Related Tickets
-- Depends on **T-003** (✅ Complete 2025-11-13 - parser timing metrics available), **T-004**, **T-005**, **T-011**.
+- Depends on **T-003** (✅ Complete 2025-11-13 - parser timing metrics available), **T-004**, **T-005**, **T-011**. _(Use `layoutDocument` metrics output (`layoutTimeMs`, `nodeCount` in [`LayoutResult`](../../src/layout/types.ts#L29-L55)) plus parser timing for instrumentation overlay.)_
 
 ### Risks & Mitigations
 - **Risk**: Bench numbers noisy. **Mitigation**: run multiple iterations and average; allow tolerance window.

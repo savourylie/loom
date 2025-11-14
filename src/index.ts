@@ -51,3 +51,14 @@ export {
   validatePlacementContext,
   validatePropertyValues,
 } from './parser/index.js';
+
+// Layout exports
+export { layoutDocument, createLayoutSignature } from './layout/index.js';
+export type {
+  LayoutRunner,
+  LayoutBox,
+  LayoutResult,
+  LayoutMetrics,
+  LayoutOptions,
+  LayoutMemoHooks,
+} from './layout/index.js';

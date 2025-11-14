@@ -43,7 +43,7 @@ Users must see polished, modern wireframes instantly; the renderer is the user-f
 - Log render durations and node counts to console for perf monitoring; expose counters for sanitized text occurrences to catch potential injection abuse.
 
 ### Dependencies / Related Tickets
-- Depends on **T-004** for layout boxes.
+- Depends on **T-004** for layout boxes via [`layoutDocument`](../../src/index.ts#L56) / [`LayoutBox`](../../src/layout/types.ts); renderer consumes this normalized tree directly.
 - Required by **T-011**, **T-013**, **T-014**, **T-018**.
 
 ### Risks & Mitigations

@@ -1,8 +1,16 @@
+**Status**: ✅ Done (2025-02-14)
 **ID**: T-004
 **Title**: Implement Layout Engine for Grid & Stacks
 **Type**: feature
 **Priority**: P0
 **Estimate**: 1 day
+
+### What Changed
+- Added layout data contracts and memo hooks in [`src/layout/types.ts`](../../src/layout/types.ts) ([commit](TODO-PR-LINK-1)).
+- Built grid/stack/zstack layout solver with diagnostics + metrics in [`src/layout/engine.ts`](../../src/layout/engine.ts) ([commit](TODO-PR-LINK-2)).
+- Wired public exports + memo signature helper for renderer consumers via [`src/index.ts`](../../src/index.ts) ([commit](TODO-PR-LINK-3)).
+- Authored layout unit tests covering grid, stacks, nesting, z-overlap checks in [`src/layout/__tests__/layout-engine.test.ts`](../../src/layout/__tests__/layout-engine.test.ts) ([commit](TODO-PR-LINK-4)).
+- Documented implementation notes + status updates in this ticket/README ([commit](TODO-PR-LINK-5)).
 
 ### Summary
 Translate parsed AST nodes into positioned boxes using Loom's grid-first layout (grid, hstack, vstack, zstack) with placement tokens, spacing, and alignment semantics.
@@ -26,8 +34,8 @@ Accurate layout math is required to render wireframes that match author intent a
 - Unit tests for each container type plus combination cases (grid in stack, etc.).
 
 ### Acceptance Criteria
-- Given a sample DSL with grid + nested stacks, when processed, then computed positions/sizes align with expected snapshots.
-- Given invalid placement (span exceeds grid columns), when processed, then a warning diagnostic is emitted without crashing layout.
+- ✅ Given a sample DSL with grid + nested stacks, when processed, then computed positions/sizes align with expected snapshots. _Covered by `layout-engine.test.ts` “grid + nested stack” assertions._
+- ✅ Given invalid placement (span exceeds grid columns), when processed, then a warning diagnostic is emitted without crashing layout. _Warning surfaced via `layoutDocument` diagnostics during test `emits diagnostics when placement spans exceed grid columns`. _
 
 ### Implementation Steps
 1. Define layout box interfaces and conversion utilities from AST to layout tree.
@@ -40,6 +48,10 @@ Accurate layout math is required to render wireframes that match author intent a
 
 ### Observability
 - Emit layout timing metrics (parse-to-layout duration) and log warnings for collisions/out-of-bounds to help catch DSL regressions in playground console.
+
+### Artifacts
+- Test report: `npm test` (includes [`src/layout/__tests__/layout-engine.test.ts`](../../src/layout/__tests__/layout-engine.test.ts)) – stored in local CI logs.
+- Public API: [`layoutDocument` export](../../src/index.ts#L56-L64) for renderer + perf tickets.
 
 ### Dependencies / Related Tickets
 - Depends on **T-003** for parser and diagnostics.
@@ -67,3 +79,8 @@ Accurate layout math is required to render wireframes that match author intent a
 ### References
 - [PRD.md §3 Solution Overview](../prd/PRD.md#3-solution-overview)
 - [DEV_PLAN.md §11 Performance Optimization](../dev-plan/DEV_PLAN.md#11-performance-optimization)
+
+### Implementation Notes (2025-02-14)
+- Layout defaults assume an 8px unit, 640–1024px viewport, and a 2-unit vertical gap between root nodes until renderer wiring lands.
+- Section/card containers share the vstack math; empty containers currently render with padding-only height until children/styles supply content.
+- `stretch` alignment expands cross-axis size when explicit dimensions exist; vertical stretch for stacks requires explicit heights to avoid over-constraining leaf components.

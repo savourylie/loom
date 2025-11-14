@@ -5,7 +5,7 @@
 | T-001 | Finalize Loom DSL & Style Spec v1 | doc | P0 | 0.5 day | ✅ Complete (2025-11-13) | - |
 | T-002 | Implement DSL Lexer & Core AST Types | feature | P0 | 1 day | ✅ Complete (2025-11-13) | T-001 |
 | T-003 | Build Parser With Incremental Diagnostics | feature | P0 | 1 day | ✅ Complete (2025-11-13) | T-002 |
-| T-004 | Implement Layout Engine for Grid & Stacks | feature | P0 | 1 day | Not Started | T-003 |
+| T-004 | Implement Layout Engine for Grid & Stacks | feature | P0 | 1 day | ✅ Done (2025-02-14) | T-003 |
 | T-005 | Build SVG Renderer With Clean Skin Defaults | feature | P0 | 1 day | Not Started | T-004 |
 | T-006 | Implement Style Block Parser & Selector Engine | feature | P0 | 1 day | Not Started | T-003 |
 | T-007 | Deliver Skin System & Sketch Variant | feature | P1 | 0.5 day | Not Started | T-005, T-006 |
