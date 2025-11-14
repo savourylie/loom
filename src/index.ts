@@ -62,3 +62,9 @@ export type {
   LayoutOptions,
   LayoutMemoHooks,
 } from './layout/index.js';
+
+// Renderer exports
+export { render } from './renderer/index.js';
+export type { RenderMetrics, RenderResult } from './renderer/index.js';
+export { resolveSkinTokens } from './renderer/skin.js';
+export type { SkinName, SkinSettings, SkinTokens, SkinTokensOverride } from './renderer/skin.js';

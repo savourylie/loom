@@ -3,6 +3,7 @@
 **Type**: feature
 **Priority**: P0
 **Estimate**: 1 day
+**Status**: ✅ Done (2025-02-14)
 
 ### Summary
 Render layout boxes into SVG markup that reflects Loom's clean skin defaults (colors, radius, typography) and supports core components (card, text, input, button, image, icon, spacer, list, tabs).
@@ -27,13 +28,19 @@ Users must see polished, modern wireframes instantly; the renderer is the user-f
 - Includes sanitization for text nodes (escape HTML entities) per security section.
 
 ### Acceptance Criteria
-- Given layout boxes for sample templates, when rendered, then SVG output visually matches design tokens defined in spec (verified via snapshot/comparison tests).
-- Given text with `<script>` characters, when rendered, then output is escaped so the SVG stays safe per PRD §12.
+- ✅ Given layout boxes for sample templates, when rendered, then SVG output visually matches design tokens defined in spec (snapshot assertion in `renderer > renders clean skin snapshot for sample layout nodes`).
+- ✅ Given text with `<script>` characters, when rendered, then output is escaped so the SVG stays safe per PRD §12 (`sanitizes unsafe text content` test ensures escaping).
 
 ### Implementation Steps
 1. Define renderer module + component-specific renderers (card/text/etc.) using shared shape utilities.
 2. Implement skin token resolver for clean defaults (color palette, radii, shadows).
 3. Wire renderer into utility consumed by Preview/Exporter and add snapshot tests for fixtures.
+
+### What Changed
+- Exported the public `render()` API plus skin helpers so Preview/Exporter can request SVG strings directly ([commit TBD](TODO-LINK)).
+- Added clean skin token resolver + defaults and tone-aware component primitives covering the MVP set ([commit TBD](TODO-LINK)).
+- Implemented sanitization + render metrics logging to satisfy security/perf requirements ([commit TBD](TODO-LINK)).
+- Introduced snapshot + escaping tests in `src/renderer/__tests__/renderer.test.ts` to lock expected SVG output ([commit TBD](TODO-LINK)).
 
 ### Test/Validation Plan
 - Integration snapshot tests comparing generated SVG strings for canonical templates.
@@ -44,7 +51,11 @@ Users must see polished, modern wireframes instantly; the renderer is the user-f
 
 ### Dependencies / Related Tickets
 - Depends on **T-004** for layout boxes via [`layoutDocument`](../../src/index.ts#L56) / [`LayoutBox`](../../src/layout/types.ts); renderer consumes this normalized tree directly.
-- Required by **T-011**, **T-013**, **T-014**, **T-018**.
+- Required by:
+  - **T-011** Preview panel consumes [`render()`](../../src/renderer/index.ts#L42) and [`resolveSkinTokens()`](../../src/renderer/skin.ts#L90) to draw live SVGs.
+  - **T-013** Exporter calls the same APIs to emit downloadable SVG snapshots with sanitized text.
+  - **T-014** Template gallery build script uses `render()` for thumbnail generation tied to template metadata.
+  - **T-018** Benchmarks read `RenderMetrics` (render duration + sanitized counts) for perf instrumentation.
 
 ### Risks & Mitigations
 - **Risk**: Large SVG output slows preview. **Mitigation**: reuse defs, avoid redundant gradients, prefer CSS classes.
@@ -52,6 +63,15 @@ Users must see polished, modern wireframes instantly; the renderer is the user-f
 
 ### Rollback Strategy
 - Revert renderer module; preview can display placeholder boxes until fixed.
+
+### Implementation Notes
+- Assumed layout engine emits absolute coordinates for every `LayoutBox`, so renderer positions nodes without additional transforms. Will revisit after layout diffing work.
+- Clean skin tone palette currently handles `brand`, `primary`, `ghost`, and `danger`; other tone values fall back to neutral colors until the style system (T-006/T-007) extends token coverage.
+
+### Artifacts
+- Renderer API: [`src/renderer/index.ts`](../../src/renderer/index.ts)
+- Skin token defaults: [`src/renderer/skin.ts`](../../src/renderer/skin.ts)
+- Snapshot + sanitization tests: [`src/renderer/__tests__/renderer.test.ts`](../../src/renderer/__tests__/renderer.test.ts)
 
 ### References
 - [PRD.md §3 Solution Overview](../prd/PRD.md#3-solution-overview)

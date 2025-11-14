@@ -42,7 +42,7 @@ Users must see immediate visual feedback; PreviewPanel stitches together AST →
 - Log render duration, node counts, fallback occurrences; expose stats overlay toggled via dev hotkey for profiling (feeds T-018).
 
 ### Dependencies / Related Tickets
-- Depends on **T-004**, **T-005**, **T-007**, **T-009**. _(Preview invokes [`layoutDocument`](../../src/index.ts#L56) to obtain `LayoutBox` trees before passing them to the SVG renderer.)_
+- Depends on **T-004**, **T-005**, **T-007**, **T-009**. _(Preview invokes [`layoutDocument`](../../src/index.ts#L56) and now calls [`render()`](../../src/renderer/index.ts#L42) / [`resolveSkinTokens()`](../../src/renderer/skin.ts#L90) to produce the SVG string.)_
 - Supports **T-008**, **T-013**, **T-014**, **T-018**.
 
 ### Risks & Mitigations

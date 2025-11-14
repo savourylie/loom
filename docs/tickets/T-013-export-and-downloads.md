@@ -41,7 +41,7 @@ Exporting artifacts is a core PRD requirement enabling authors to share diagrams
 - Log export type usage counts (SVG vs Loom) to console; capture average SVG size for perf tuning.
 
 ### Dependencies / Related Tickets
-- Depends on **T-011** for render data and **T-010** for source text.
+- Depends on **T-011** for render data (Preview must expose the latest [`render()`](../../src/renderer/index.ts#L42) result) and **T-010** for source text.
 
 ### Risks & Mitigations
 - **Risk**: Large Blob stalls UI. **Mitigation**: generate Blob lazily and release references after download.
