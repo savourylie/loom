@@ -55,6 +55,7 @@ Real-time authoring with actionable errors is core to Loom's value; the editor m
     - Each diagnostic includes hint for quick fixes
   - **See**: [T-003 Completion Notes](./T-003-parser-with-diagnostics.md#-completion-notes-2025-11-13)
 - Depends on **T-009**.
+  - ✅ **T-009 Done (2025-11-14)**: Editor mounts inside the [AppShell primary panel](../../apps/web/components/app-shell.tsx) and should reuse [StoreProvider/useAppStore](../../apps/web/providers/store-provider.tsx) plus [AppProviders](../../apps/web/app/providers.tsx) to publish run/format actions + layout arrangement signals.
 - Connected to **T-012**, **T-011**.
 
 ### Risks & Mitigations

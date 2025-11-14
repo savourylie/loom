@@ -51,6 +51,7 @@ Documentation ensures users can self-serve learning the language; aligns with DE
     - Complete examples: [Examples Section](../spec/DSL_SPEC_V1.md#complete-examples) (4 valid + 8 error examples)
     - Error reference: [Error Handling](../spec/DSL_SPEC_V1.md#error-handling) with error codes
 - Related to **T-014** for template docs.
+  - ✅ **T-009 Done (2025-11-14)**: `/docs` now routes through [apps/web/app/docs/page.tsx](../../apps/web/app/docs/page.tsx) and shared [AppShell](../../apps/web/components/app-shell.tsx); this ticket replaces the placeholders with MDX content + server components while keeping AppShell header intact.
 
 ### Risks & Mitigations
 - **Risk**: Docs drift from implementation. **Mitigation**: include snippet tests referencing parser to keep examples valid.

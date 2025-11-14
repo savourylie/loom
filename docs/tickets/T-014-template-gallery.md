@@ -41,6 +41,7 @@ Templates accelerate onboarding and satisfy PRD success criteria for zero-config
 
 ### Dependencies / Related Tickets
 - Depends on **T-009**, **T-011**, **T-012**. _(Template previews call [`render()`](../../src/renderer/index.ts#L42) with `skinSettingsFromGlobals()` data so each sample can advertise both clean + sketch skins without hand-tuned SVGs.)_
+  - ✅ **T-009 Done (2025-11-14)**: Extend the existing `/examples` placeholder at [apps/web/app/examples/page.tsx](../../apps/web/app/examples/page.tsx) and plug into [AppShell](../../apps/web/components/app-shell.tsx) + [StoreProvider](../../apps/web/providers/store-provider.tsx) to dispatch template-load actions toward the editor route.
 
 ### Risks & Mitigations
 - **Risk**: Thumbnail drift vs renderer updates. **Mitigation**: generate thumbnails via script tied to renderer commit hash.

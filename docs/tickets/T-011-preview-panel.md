@@ -43,6 +43,7 @@ Users must see immediate visual feedback; PreviewPanel stitches together AST →
 
 ### Dependencies / Related Tickets
 - Depends on **T-004**, **T-005**, **T-007**, **T-009**. _(Preview invokes [`layoutDocument`](../../src/index.ts#L56) and now calls [`render()`](../../src/renderer/index.ts#L42) with skin data derived via [`skinSettingsFromGlobals()`](../../src/renderer/skin.ts#L178) / [`resolveSkinTokens()`](../../src/renderer/skin.ts#L166) so style globals toggle clean vs sketch output.)_
+  - ✅ **T-009 Done (2025-11-14)**: Mount PreviewPanel inside the [AppShell secondary panel](../../apps/web/components/app-shell.tsx) and subscribe to layout sizing + theming by reading [useAppStore](../../apps/web/providers/store-provider.tsx) and [ThemeProvider](../../apps/web/components/theme-provider.tsx).
 - Supports **T-008**, **T-013**, **T-014**, **T-018**.
 
 ### Risks & Mitigations
