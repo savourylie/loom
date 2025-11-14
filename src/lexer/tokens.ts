@@ -71,6 +71,8 @@ export enum TokenType {
   // ===== Punctuation & Operators =====
   LBRACE = 'LBRACE', // {
   RBRACE = 'RBRACE', // }
+  LPAREN = 'LPAREN', // (
+  RPAREN = 'RPAREN', // )
   COLON = 'COLON', // :
   SEMICOLON = 'SEMICOLON', // ;
   COMMA = 'COMMA', // ,

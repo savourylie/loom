@@ -150,6 +150,18 @@ describe('Tokenizer', () => {
       expect(tokens[0]?.type).toBe(TokenType.SELECTOR_DEFAULT);
     });
 
+    it('tokenizes type selectors with parentheses', () => {
+      const tokenizer = new Tokenizer('type(card)');
+      const tokens = tokenizer.tokenize();
+
+      expect(tokens[0]?.type).toBe(TokenType.IDENTIFIER);
+      expect(tokens[0]?.value).toBe('type');
+      expect(tokens[1]?.type).toBe(TokenType.LPAREN);
+      expect(tokens[2]?.type).toBe(TokenType.CARD);
+      expect(tokens[2]?.value).toBe('card');
+      expect(tokens[3]?.type).toBe(TokenType.RPAREN);
+    });
+
     it('tokenizes braces for style blocks', () => {
       const tokenizer = new Tokenizer('{ }');
       const tokens = tokenizer.tokenize();

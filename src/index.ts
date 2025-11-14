@@ -52,6 +52,10 @@ export {
   validatePropertyValues,
 } from './parser/index.js';
 
+// Style exports
+export { evaluateStyles } from './style/index.js';
+export type { StyleEvaluationResult, StyleEvaluationMetrics } from './style/index.js';
+
 // Layout exports
 export { layoutDocument, createLayoutSignature } from './layout/index.js';
 export type {

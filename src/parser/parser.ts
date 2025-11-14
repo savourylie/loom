@@ -5,7 +5,15 @@
 
 import { Tokenizer } from '../lexer/tokenizer.js';
 import { Token, TokenType } from '../lexer/tokens.js';
-import { Node, Document, PlacementTokens, createDocument, createNode } from '../ast/types.js';
+import {
+  Node,
+  Document,
+  PlacementTokens,
+  Selector,
+  createDocument,
+  createNode,
+  createStyleRule,
+} from '../ast/types.js';
 import { ErrorCode, ErrorSeverity } from '../errors/index.js';
 import { DiagnosticCollector, Diagnostic } from './diagnostics.js';
 
@@ -58,6 +66,36 @@ const REQUIRES_LABEL = new Set(['text', 'input', 'button', 'image', 'icon', 'lis
  * Component types that are containers (can have children)
  */
 const CONTAINER_TYPES = new Set(['grid', 'hstack', 'vstack', 'zstack', 'section', 'card']);
+
+const STYLE_PROPERTY_TOKENS = new Set([
+  TokenType.STYLE_SKIN,
+  TokenType.STYLE_FONT,
+  TokenType.STYLE_U,
+  TokenType.STYLE_FILL,
+  TokenType.STYLE_STROKE,
+  TokenType.STYLE_TEXT,
+  TokenType.STYLE_SHADOW,
+  TokenType.PROP_GAP,
+  TokenType.PROP_PAD,
+  TokenType.PROP_TONE,
+  TokenType.PROP_RADIUS,
+]);
+
+const SUPPORTED_STYLE_PROPERTIES = new Set([
+  'skin',
+  'font',
+  'u',
+  'fill',
+  'stroke',
+  'text',
+  'shadow',
+  'radius',
+  'tone',
+  'gap',
+  'pad',
+]);
+
+const SUPPORTED_STYLE_PREFIXES = new Set(['color', 'radius', 'shadow', 'stroke']);
 
 /**
  * Main Parser class
@@ -149,13 +187,13 @@ export class Parser {
 
       // Style blocks (stubbed for now per plan)
       if (token.type === TokenType.STYLE) {
-        this.parseStyleBlock();
+        this.parseStyleBlock(document);
         continue;
       }
 
       // Let statements (stubbed for now per plan)
       if (token.type === TokenType.LET) {
-        this.parseLetStatement();
+        this.parseLetStatement(document);
         continue;
       }
 
@@ -477,39 +515,455 @@ export class Parser {
   /**
    * Stub: Parse style block (TODO: implement in T-006/T-007)
    */
-  private parseStyleBlock(): void {
-    this.advance(); // Consume 'style'
+  private parseStyleBlock(document: Document): void {
+    const styleToken = this.advance(); // Consume 'style'
+    const selector = this.parseStyleSelector();
 
-    // Skip tokens until closing brace or newline
-    while (!this.check(TokenType.RBRACE) && !this.check(TokenType.NEWLINE) && !this.isAtEnd()) {
+    if (!selector) {
+      this.skipInvalidStyleBlock();
+      return;
+    }
+
+    this.skipStyleWhitespace();
+
+    if (!this.check(TokenType.LBRACE)) {
+      const token = this.peek();
+      this.addError(
+        ErrorCode.MISSING_TOKEN,
+        `Expected '{' to start style block`,
+        token.line,
+        token.column,
+      );
+      this.skipInvalidStyleBlock();
+      return;
+    }
+
+    this.advance(); // Consume '{'
+
+    const declarations: Record<string, unknown> = {};
+    const localVariables = new Map<string, unknown>();
+    let closed = false;
+
+    while (!this.isAtEnd()) {
+      const token = this.peek();
+
+      if (token.type === TokenType.RBRACE) {
+        this.advance();
+        closed = true;
+        break;
+      }
+
+      if (
+        token.type === TokenType.NEWLINE ||
+        token.type === TokenType.SEMICOLON ||
+        token.type === TokenType.INDENT ||
+        token.type === TokenType.DEDENT
+      ) {
+        this.advance();
+        continue;
+      }
+
+      if (token.type === TokenType.LET) {
+        this.parseLetStatement(document, localVariables);
+        if (this.check(TokenType.SEMICOLON)) {
+          this.advance();
+        }
+        continue;
+      }
+
+      if (this.isStylePropertyStart(token)) {
+        const propertyInfo = this.parseStylePropertyName();
+        if (!propertyInfo) {
+          this.skipStyleStatement();
+          continue;
+        }
+
+        if (!this.check(TokenType.COLON)) {
+          const errorToken = this.peek();
+          this.addError(
+            ErrorCode.MISSING_TOKEN,
+            `Expected ':' after style property '${propertyInfo.name}'`,
+            errorToken.line,
+            errorToken.column,
+          );
+          this.skipStyleStatement();
+          continue;
+        }
+
+        this.advance(); // Consume ':'
+        const value = this.parseValueToken(document, localVariables, true);
+
+        if (!this.isSupportedStyleProperty(propertyInfo.name)) {
+          this.diagnostics.add(
+            ErrorCode.INVALID_PROPERTY,
+            `Unsupported style property '${propertyInfo.name}'`,
+            propertyInfo.line,
+            propertyInfo.column,
+            ErrorSeverity.WARNING,
+            'Refer to the style reference for valid properties (skin, tone, color.*, radius.*, etc.)',
+          );
+        } else if (value !== undefined) {
+          declarations[propertyInfo.name] = value;
+        }
+
+        if (this.check(TokenType.SEMICOLON)) {
+          this.advance();
+        }
+        continue;
+      }
+
+      this.addError(
+        ErrorCode.UNEXPECTED_TOKEN,
+        `Unexpected token '${token.raw}' in style block`,
+        token.line,
+        token.column,
+      );
       this.advance();
     }
 
-    if (this.check(TokenType.RBRACE)) {
-      this.advance();
+    if (!closed) {
+      this.addError(
+        ErrorCode.MISSING_TOKEN,
+        `Missing '}' to close style block started here`,
+        styleToken.line,
+        styleToken.column,
+      );
     }
 
-    // TODO: Implement full style block parsing in T-006/T-007
-    if (process.env.NODE_ENV !== 'test') {
-      console.log('[Parser] TODO: Style block parsing not yet implemented');
+    document.styles.push(createStyleRule(selector, declarations));
+  }
+
+  private parseLetStatement(document: Document, scope?: Map<string, unknown>): void {
+    this.advance(); // Consume 'let'
+
+    if (!this.check(TokenType.IDENTIFIER)) {
+      const token = this.peek();
+      this.addError(
+        ErrorCode.UNEXPECTED_TOKEN,
+        `Expected identifier after 'let'`,
+        token.line,
+        token.column,
+      );
+      this.skipStyleStatement();
+      return;
+    }
+
+    const nameToken = this.advance();
+
+    if (!this.check(TokenType.EQUALS)) {
+      const token = this.peek();
+      this.addError(
+        ErrorCode.MISSING_TOKEN,
+        `Expected '=' after variable '${nameToken.value}'`,
+        token.line,
+        token.column,
+      );
+      this.skipStyleStatement();
+      return;
+    }
+
+    this.advance(); // Consume '='
+    const value = this.parseValueToken(document, scope, false);
+
+    if (value !== undefined) {
+      if (scope) {
+        scope.set(nameToken.value as string, value);
+      } else {
+        document.variables[nameToken.value as string] = value;
+      }
+    }
+
+    if (this.check(TokenType.SEMICOLON)) {
+      this.advance();
     }
   }
 
-  /**
-   * Stub: Parse let statement (TODO: implement in T-006/T-007)
-   */
-  private parseLetStatement(): void {
-    this.advance(); // Consume 'let'
+  private parseStyleSelector(): Selector | null {
+    const token = this.peek();
 
-    // Skip tokens until newline
-    while (!this.check(TokenType.NEWLINE) && !this.isAtEnd()) {
+    if (token.type === TokenType.SELECTOR_DEFAULT) {
+      this.advance();
+      return { type: 'default' };
+    }
+
+    if (token.type === TokenType.DOT) {
+      const dotToken = this.advance();
+      if (!this.check(TokenType.IDENTIFIER)) {
+        const next = this.peek();
+        this.addError(
+          ErrorCode.INVALID_SELECTOR,
+          `Expected class name after '.'`,
+          next.line,
+          next.column,
+        );
+        return null;
+      }
+      const classToken = this.advance();
+      return { type: 'class', name: classToken.value as string };
+    }
+
+    if (token.type === TokenType.HASH) {
+      const hashToken = this.advance();
+      if (!this.check(TokenType.IDENTIFIER)) {
+        const next = this.peek();
+        this.addError(
+          ErrorCode.INVALID_SELECTOR,
+          `Expected ID name after '#'`,
+          next.line,
+          next.column,
+        );
+        return null;
+      }
+      const idToken = this.advance();
+      return { type: 'id', name: idToken.value as string };
+    }
+
+    if (token.type === TokenType.IDENTIFIER && token.value === 'type') {
+      this.advance();
+
+      if (!this.check(TokenType.LPAREN)) {
+        const next = this.peek();
+        this.addError(
+          ErrorCode.INVALID_SELECTOR,
+          `Expected '(' after type selector`,
+          next.line,
+          next.column,
+        );
+        return null;
+      }
+
+      this.advance(); // Consume '('
+
+      const typeToken = this.peek();
+      if (!this.check(TokenType.IDENTIFIER) && !this.isComponentToken(typeToken.type)) {
+        const next = this.peek();
+        this.addError(
+          ErrorCode.INVALID_SELECTOR,
+          `Expected component type name inside type() selector`,
+          next.line,
+          next.column,
+        );
+        return null;
+      }
+
+      const nameToken = this.advance();
+      const selectorName = String(nameToken.value);
+
+      if (!this.check(TokenType.RPAREN)) {
+        const next = this.peek();
+        this.addError(
+          ErrorCode.INVALID_SELECTOR,
+          `Expected ')' after type(${nameToken.value})`,
+          next.line,
+          next.column,
+        );
+        return null;
+      }
+
+      this.advance(); // Consume ')'
+      return { type: 'type', name: selectorName };
+    }
+
+    this.addError(
+      ErrorCode.INVALID_SELECTOR,
+      `Invalid selector '${token.raw}' after style keyword`,
+      token.line,
+      token.column,
+    );
+    return null;
+  }
+
+  private skipStyleWhitespace(): void {
+    while (
+      this.check(TokenType.NEWLINE) ||
+      this.check(TokenType.INDENT) ||
+      this.check(TokenType.DEDENT)
+    ) {
       this.advance();
     }
+  }
 
-    // TODO: Implement full let statement parsing in T-006/T-007
-    if (process.env.NODE_ENV !== 'test') {
-      console.log('[Parser] TODO: Let statement parsing not yet implemented');
+  private skipInvalidStyleBlock(): void {
+    let depth = 0;
+    while (!this.isAtEnd()) {
+      if (this.check(TokenType.LBRACE)) {
+        depth++;
+      } else if (this.check(TokenType.RBRACE)) {
+        this.advance();
+        if (depth === 0) {
+          return;
+        }
+        depth--;
+        continue;
+      }
+
+      if (depth === 0 && this.check(TokenType.NEWLINE)) {
+        return;
+      }
+
+      this.advance();
     }
+  }
+
+  private isStylePropertyStart(token: Token): boolean {
+    return (
+      STYLE_PROPERTY_TOKENS.has(token.type) ||
+      token.type === TokenType.COLOR_REF ||
+      token.type === TokenType.IDENTIFIER
+    );
+  }
+
+  private parseStylePropertyName(): { name: string; line: number; column: number } | null {
+    const token = this.peek();
+    const line = token.line;
+    const column = token.column;
+
+    if (token.type === TokenType.COLOR_REF || STYLE_PROPERTY_TOKENS.has(token.type)) {
+      this.advance();
+      return { name: String(token.value), line, column };
+    }
+
+    if (token.type === TokenType.IDENTIFIER) {
+      const parts: string[] = [String(token.value)];
+      this.advance();
+
+      while (this.check(TokenType.DOT)) {
+        const dotToken = this.advance();
+        if (!this.check(TokenType.IDENTIFIER)) {
+          const next = this.peek();
+          this.addError(
+            ErrorCode.UNEXPECTED_TOKEN,
+            `Expected identifier after '.' in style property`,
+            dotToken.line,
+            dotToken.column,
+          );
+          return null;
+        }
+        parts.push(String(this.advance().value));
+      }
+
+      return { name: parts.join('.'), line, column };
+    }
+
+    this.addError(
+      ErrorCode.UNEXPECTED_TOKEN,
+      `Unexpected token '${token.raw}' in style declaration`,
+      line,
+      column,
+    );
+    return null;
+  }
+
+  private isSupportedStyleProperty(name: string): boolean {
+    if (SUPPORTED_STYLE_PROPERTIES.has(name)) {
+      return true;
+    }
+
+    const dotIndex = name.indexOf('.');
+    if (dotIndex === -1) {
+      return false;
+    }
+
+    const prefix = name.slice(0, dotIndex);
+    return SUPPORTED_STYLE_PREFIXES.has(prefix);
+  }
+
+  private skipStyleStatement(): void {
+    while (!this.isAtEnd()) {
+      if (
+        this.check(TokenType.NEWLINE) ||
+        this.check(TokenType.SEMICOLON) ||
+        this.check(TokenType.RBRACE)
+      ) {
+        return;
+      }
+      this.advance();
+    }
+  }
+
+  private parseValueToken(
+    document: Document,
+    scope?: Map<string, unknown>,
+    allowVariableRef: boolean = true,
+  ): unknown {
+    const token = this.peek();
+
+    if (this.check(TokenType.NUMBER)) {
+      return this.advance().value as number;
+    }
+
+    if (this.check(TokenType.STRING)) {
+      return this.advance().value as string;
+    }
+
+    if (this.check(TokenType.HEX_COLOR)) {
+      return this.advance().value as string;
+    }
+
+    if (this.check(TokenType.COLOR_REF)) {
+      return this.advance().value as string;
+    }
+
+    if (this.check(TokenType.IDENTIFIER)) {
+      return this.advance().value as string;
+    }
+
+    if (this.check(TokenType.VARIABLE_REF)) {
+      if (!allowVariableRef) {
+        const refToken = this.advance();
+        this.addError(
+          ErrorCode.UNEXPECTED_TOKEN,
+          `Variables cannot reference other variables ('${refToken.raw}')`,
+          refToken.line,
+          refToken.column,
+          undefined,
+          'Assign literal values instead of referencing another variable',
+        );
+        return undefined;
+      }
+
+      const refToken = this.advance();
+      const resolved = this.lookupVariable(document, refToken.value as string, scope);
+
+      if (resolved === undefined) {
+        this.addError(
+          ErrorCode.UNDEFINED_VARIABLE,
+          `Variable '$${refToken.value}' is not defined`,
+          refToken.line,
+          refToken.column,
+          undefined,
+          `Define variable with: let ${refToken.value} = <value>`,
+        );
+        return undefined;
+      }
+
+      return resolved;
+    }
+
+    this.addError(
+      ErrorCode.INVALID_PROPERTY_VALUE,
+      `Invalid value '${token.raw}' in style declaration`,
+      token.line,
+      token.column,
+    );
+    this.advance();
+    return undefined;
+  }
+
+  private lookupVariable(
+    document: Document,
+    name: string,
+    scope?: Map<string, unknown>,
+  ): unknown {
+    if (scope?.has(name)) {
+      return scope.get(name);
+    }
+
+    if (Object.prototype.hasOwnProperty.call(document.variables, name)) {
+      return document.variables[name];
+    }
+
+    return undefined;
   }
 
   /**

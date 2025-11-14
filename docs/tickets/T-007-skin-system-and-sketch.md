@@ -41,7 +41,7 @@ Skins make Loom diagrams feel polished or hand-drawn without changing content, f
 - Log current skin + applied overrides for debugging; capture counts of sketch usage to gauge adoption (local metrics for now).
 
 ### Dependencies / Related Tickets
-- Depends on **T-005** and **T-006**.
+- Depends on **T-005** and **T-006**. T-006 now exposes `evaluateStyles` (`src/style/evaluator.ts`) whose merged globals must feed into the skin resolver so overrides like `skin: sketch` propagate correctly.
 - Feeds into **T-011**, **T-014**.
 
 ### Risks & Mitigations

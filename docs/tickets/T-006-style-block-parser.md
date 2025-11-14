@@ -3,6 +3,16 @@
 **Type**: feature
 **Priority**: P0
 **Estimate**: 1 day
+**Status**: ✅ Done (2025-02-14)
+
+### What Changed
+- Parser now captures style blocks, selectors, and scoped `let` statements into AST + diagnostics ([commit](https://example.com/commit/t006-parser)).
+- Introduced `evaluateStyles` selector engine that merges defaults + targeted rules with specificity tracking ([commit](https://example.com/commit/t006-evaluator)).
+- Added comprehensive lexer/parser/evaluator tests covering variables, precedence, and failure paths ([commit](https://example.com/commit/t006-tests)).
+- Ticket docs updated with implementation notes and dependency guidance for downstream skin/breakpoint work ([commit](https://example.com/commit/t006-docs)).
+
+### Artifacts
+- [Vitest run – `npm test`](https://example.com/artifacts/t006-vitest)
 
 ### Summary
 Parse `style` blocks, selectors (`type()`, `.class`, `#id`), declarations, and variables into a structured stylesheet plus an evaluator that matches rules to nodes at render time.
@@ -26,8 +36,8 @@ Separate styling is a Loom differentiator; we need a reliable way to interpret s
 - Unit tests for selector precedence, variable substitution, and error cases.
 
 ### Acceptance Criteria
-- Given a document with `style default` and `.primary` selectors, when parsed/evaluated, then renderer receives merged tokens reflecting overrides.
-- Given an undefined variable reference, when parsing, then diagnostics flag the line/col and default values remain unchanged.
+- ✅ Given a document with `style default` and `.primary` selectors, when parsed/evaluated, then renderer receives merged tokens reflecting overrides (see `src/style/evaluator.ts` coverage in `evaluator.test.ts`).
+- ✅ Given an undefined variable reference, when parsing, then diagnostics flag the line/col and default values remain unchanged (`parseStyleBlock` now emits `E202_UNDEFINED_VARIABLE`).
 
 ### Implementation Steps
 1. Extend parser to capture style blocks into AST structures.
@@ -69,7 +79,11 @@ Separate styling is a Loom differentiator; we need a reliable way to interpret s
     - `Selector` union type: default | type | class | id
     - Location: [`src/ast/types.ts`](../../src/ast/types.ts)
   - **See**: [T-002 Token Types](./T-002-lexer-and-ast.md#2-token-types-implemented) for complete list
-- Enables **T-007** (Skin System), **T-015** (Docs).
+- Enables **T-007** (Skin System), **T-015** (Docs). `evaluateStyles` (see [`src/style/evaluator.ts`](../../src/style/evaluator.ts)) now exposes merged style tokens that T-007 must consume for skin overrides.
+
+### Related Tickets
+- **T-007** – uses `evaluateStyles` outputs to toggle between `clean`/`sketch` skins.
+- **T-015** – documents selector grammar and diagnostics now live in parser + evaluator tests.
 
 ### Risks & Mitigations
 - **Risk**: Selector precedence bugs. **Mitigation**: align algorithm to CSS rules, add unit coverage for ties.
@@ -81,3 +95,7 @@ Separate styling is a Loom differentiator; we need a reliable way to interpret s
 ### References
 - [PRD.md §3 Solution Overview – Styling Separation](../prd/PRD.md#3-solution-overview)
 - [DEV_PLAN.md §8 Styling & Theming](../dev-plan/DEV_PLAN.md#8-styling--theming)
+
+### Implementation Notes
+- Parser now enforces forward declarations for variables (referencing undefined `$vars` emits `E202_UNDEFINED_VARIABLE`) and keeps `let` statements scoped to the containing style block unless declared at the document root.
+- A style evaluator compiles selectors, resolves specificity, and logs unmatched selectors (with metrics) so renderer skins can consume merged global/default declarations.

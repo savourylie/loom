@@ -391,36 +391,74 @@ button "Third" #id
     });
   });
 
-  describe('Stub features (style, let, when)', () => {
-    it('recognizes style blocks (stubbed)', () => {
-      const input = `style default {}
+  describe('Style block parsing', () => {
+    it('captures style rules and top-level variables', () => {
+      const input = `let primaryGap = 2
+style default {
+  gap: $primaryGap
+  skin: clean
+}
+
+style .primary {
+  tone: brand
+}
+
 button "Test"
+`;
+
+      const result = parseDocument(input);
+
+      expect(result.document.variables['primaryGap']).toBe(2);
+      expect(result.document.styles).toHaveLength(2);
+      expect(result.document.styles[0]!.selector.type).toBe('default');
+      expect(result.document.styles[0]!.declarations['gap']).toBe(2);
+      expect(result.document.styles[1]!.selector).toEqual({ type: 'class', name: 'primary' });
+      expect(result.document.styles[1]!.declarations['tone']).toBe('brand');
+      expect(result.diagnostics).toHaveLength(0);
+    });
+
+    it('scopes let statements inside style blocks', () => {
+      const input = `style default {
+  let stackPad = 3
+  pad: $stackPad
+}
 `;
       const result = parseDocument(input);
 
-      // Style blocks are stubbed, so they're skipped but don't error
-      expect(result.document.nodes).toHaveLength(1);
-      expect(result.document.nodes[0]!.type).toBe('button');
+      expect(result.document.styles[0]!.declarations['pad']).toBe(3);
+      expect(result.document.variables['stackPad']).toBeUndefined();
     });
 
-    it('recognizes let statements (stubbed)', () => {
-      const input = `let brandColor = #6D28D9
-button "Test"
-`;
+    it('reports undefined variables in style declarations', () => {
+      const input = `style default {
+  gap: $missingValue
+}`;
       const result = parseDocument(input);
 
-      // Let statements are stubbed
-      expect(result.document.nodes).toHaveLength(1);
-      expect(result.document.nodes[0]!.type).toBe('button');
+      expect(result.diagnostics).toHaveLength(1);
+      expect(result.diagnostics[0]!.code).toBe(ErrorCode.UNDEFINED_VARIABLE);
     });
 
+    it('warns on unsupported style properties', () => {
+      const input = `style default {
+  padding: 2
+}`;
+      const result = parseDocument(input);
+
+      expect(result.diagnostics).toHaveLength(1);
+      expect(result.diagnostics[0]!.code).toBe(ErrorCode.INVALID_PROPERTY);
+      expect(result.document.styles[0]!.declarations).not.toHaveProperty('padding');
+    });
+  });
+
+  describe('Stub features (when)', () => {
     it('recognizes when blocks (stubbed)', () => {
       const input = `when >768 {}
 button "Test"
 `;
       const result = parseDocument(input);
 
-      // When blocks are stubbed
+      // When blocks are still stubbed
       expect(result.document.nodes).toHaveLength(1);
       expect(result.document.nodes[0]!.type).toBe('button');
     });

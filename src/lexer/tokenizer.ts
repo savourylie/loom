@@ -469,6 +469,10 @@ export class Tokenizer {
         return this.createToken(TokenType.LBRACE, '{', '{', startLine, startColumn);
       case '}':
         return this.createToken(TokenType.RBRACE, '}', '}', startLine, startColumn);
+      case '(':
+        return this.createToken(TokenType.LPAREN, '(', '(', startLine, startColumn);
+      case ')':
+        return this.createToken(TokenType.RPAREN, ')', ')', startLine, startColumn);
       case ':':
         return this.createToken(TokenType.COLON, ':', ':', startLine, startColumn);
       case ';':
